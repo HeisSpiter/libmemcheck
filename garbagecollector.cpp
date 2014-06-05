@@ -1318,6 +1318,8 @@ gc::GarbageCollector& gc::GarbageCollector::operator=(const GarbageCollector &in
     pmbFreed = inGC.pmbFreed;
     ulTotalAllocated = inGC.ulTotalAllocated;
     ulMaxBytes = inGC.ulMaxBytes;
+    pSystemMalloc = inGC.pSystemMalloc;
+    pSystemFree = inGC.pSystemFree;
   }
 
   return *this;
