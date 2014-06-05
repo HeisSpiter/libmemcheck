@@ -1726,14 +1726,16 @@ void operator delete[](void * ptr, const std::nothrow_t&) throw()
  * Macro for C++ new operator overloads that throw exception.
  * It is a simple wrapper to Allocate() method.
  */
-#define OP_NEW_THROW                                                                        \
-  try                                                                                       \
-  {                                                                                         \
-    return gc::GetInstance().AllocateWithTagInt(size, PAGED_BLOCK | RAISE_ON_FAILURE, 0UL); \
-  }                                                                                         \
-  catch (gc::GCException& e)                                                                \
-  {                                                                                         \
-    throw std::bad_alloc();                                                                 \
+#define OP_NEW_THROW                                                                                              \
+  try                                                                                                             \
+  {                                                                                                               \
+    return gc::GetInstance().AllocateWithTagInt(size,                                                             \
+                                                PAGED_BLOCK | RAISE_ON_FAILURE | DO_NOT_RAISE_IF_CORRUPT_ON_FREE, \
+                                                0UL);                                                             \
+  }                                                                                                               \
+  catch (gc::GCException& e)                                                                                      \
+  {                                                                                                               \
+    throw std::bad_alloc();                                                                                       \
   }
 
 /**
@@ -1741,14 +1743,16 @@ void operator delete[](void * ptr, const std::nothrow_t&) throw()
  * Macro for C++ new operator overloads that do not throw exception.
  * It is a simple wrapper to Allocate() method.
  */
-#define OP_NEW_NO_THROW                                                                     \
-  try                                                                                       \
-  {                                                                                         \
-    return gc::GetInstance().AllocateWithTagInt(size, PAGED_BLOCK | RAISE_ON_FAILURE, 0UL); \
-  }                                                                                         \
-  catch (gc::GCException& e)                                                                \
-  {                                                                                         \
-    return 0;                                                                               \
+#define OP_NEW_NO_THROW                                                                                           \
+  try                                                                                                             \
+  {                                                                                                               \
+    return gc::GetInstance().AllocateWithTagInt(size,                                                             \
+                                                PAGED_BLOCK | RAISE_ON_FAILURE | DO_NOT_RAISE_IF_CORRUPT_ON_FREE, \
+                                                0UL);                                                             \
+  }                                                                                                               \
+  catch (gc::GCException& e)                                                                                      \
+  {                                                                                                               \
+    return 0;                                                                                                     \
   }
 
 void * operator new(std::size_t size) throw (std::bad_alloc)
@@ -1776,7 +1780,9 @@ void * calloc(size_t nmemb, size_t size) throw()
   /* Simple wrapper */
   try
   {
-    return gc::GetInstance().AllocateWithTagInt(nmemb * size, PAGED_BLOCK | RAISE_ON_FAILURE | ZEROED_BLOCK, 0UL);
+    return gc::GetInstance().AllocateWithTagInt(nmemb * size,
+                                                PAGED_BLOCK | RAISE_ON_FAILURE | ZEROED_BLOCK | DO_NOT_RAISE_IF_CORRUPT_ON_FREE,
+                                                0UL);
   }
   catch (gc::GCException& e)
   {
@@ -1802,7 +1808,9 @@ void * malloc(size_t size) throw()
   /* Simple wrapper */
   try
   {
-    return gc::GetInstance().AllocateWithTagInt(size, PAGED_BLOCK | RAISE_ON_FAILURE, 0UL);
+    return gc::GetInstance().AllocateWithTagInt(size,
+                                                PAGED_BLOCK | RAISE_ON_FAILURE | DO_NOT_RAISE_IF_CORRUPT_ON_FREE,
+                                                0UL);
   }
   catch (gc::GCException& e)
   {
