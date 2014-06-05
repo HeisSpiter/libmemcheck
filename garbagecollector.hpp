@@ -205,14 +205,14 @@ namespace gc
     if (!(exp))                                     \
     {                                               \
       GCDebug("Assertion '" << #exp << "' failed"); \
-      throw ListCorrupted();                        \
+      throw InternalError();                        \
     }
 #else
 #ifndef _NO_ASSERT_
   #define GCAssert(exp)                                \
     if (!(exp))                                        \
     {                                                  \
-      throw ListCorrupted();                           \
+      throw InternalError();                           \
     }
 #else
   #define GCAssert(exp)
