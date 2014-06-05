@@ -197,6 +197,19 @@ namespace gc
 #else
   #define GCDebug(exp)
 #endif
+  /**
+   * \internal
+   * Macro used for debug. Its purpose is to print given
+   * expression to standard output. It prepends file, line
+   * and function information. It doesn't add any EOL char.
+   */
+#ifdef _DBG_
+  #define GCDebugNoEndl(exp)                          \
+    std::cout << __FILE__ << ":" << __LINE__ << ": "; \
+    std::cout << __FUNCTION__ << ": " << exp
+#else
+  #define GCDebugNoEndl(exp)
+#endif
 
   /**
    * Garbage collector assert. If the given expression
@@ -509,6 +522,10 @@ namespace gc
       void * AllocateWithTagInt(size_t Size, unsigned int Flags, unsigned long Tag)
         throw(InternalError, InvalidSize, InvalidFlags, MemoryBlockCorrupted, NoMemory, NotEnoughSpace)
         __attribute__((noinline));
+      /**
+       * \internal
+       */
+      void DisplayRequesterName(const MemoryBlock * Block) const throw();
       /**
        * \internal
        * It looks through the linked lists in order to find the real address of the

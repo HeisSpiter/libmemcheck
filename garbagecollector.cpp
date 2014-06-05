@@ -82,7 +82,8 @@ gc::GarbageCollector::~GarbageCollector()
                 << "bytes at address: " << CurrentBlock->pBlock);
         GCDebug("It was referenced " << CurrentBlock->uiBlockReferences << " times");
         GCDebug("Thread " << CurrentBlock->ulBlockOwner << " was owning it");
-        GCDebug("It has been allocated at : " << CurrentBlock->pCallingAddress);
+        GCDebugNoEndl("It has been allocated at: ");
+        DisplayRequesterName(CurrentBlock);
         Size += CurrentBlock->uBlockSize;
       }
       /* As we are in debug mode, also perform
@@ -758,7 +759,8 @@ void gc::GarbageCollector::CheckForCorruption() const throw(gc::ListCorrupted, g
             CurrentBlock->bBlockFreed == true)
         {
           GCDebug("In use entry " << CurrentBlock << " seems to be corrupted!");
-          GCDebug("It may have been allocated at: " << CurrentBlock->pCallingAddress);
+          GCDebugNoEndl("It may have been allocated at: ");
+          DisplayRequesterName(CurrentBlock);
           mListsLock.Unlock();
           throw ListCorrupted();
         }
@@ -770,7 +772,8 @@ void gc::GarbageCollector::CheckForCorruption() const throw(gc::ListCorrupted, g
         {
           /* Not valid! */
           GCDebug("Memory block at " << CurrentBlock->pBlock << " seems to be corrupted!");
-          GCDebug("It may have been allocated at: " << CurrentBlock->pCallingAddress);
+          GCDebugNoEndl("It may have been allocated at: ");
+          DisplayRequesterName(CurrentBlock);
           mListsLock.Unlock();
           throw MemoryBlockCorrupted();
         }
@@ -833,7 +836,6 @@ void gc::GarbageCollector::CheckForCorruption() const throw(gc::ListCorrupted, g
             CurrentBlock->bBlockFreed == false)
         {
           GCDebug("Freed entry " << CurrentBlock << " seems to be corrupted!");
-          GCDebug("It may have been allocated at: " << CurrentBlock->pCallingAddress);
           mListsLock.Unlock();
           throw ListCorrupted();
         }
@@ -935,6 +937,40 @@ void gc::GarbageCollector::Dereference(void * Address) throw(gc::InternalError, 
   }
 
   return;
+}
+
+void gc::GarbageCollector::DisplayRequesterName(const MemoryBlock * Block) const throw()
+{
+#ifdef _DBG_
+  Dl_info Info;
+  unsigned long Position;
+
+  if (Block->pCallingAddress != 0)
+  {
+    if (dladdr(Block->pCallingAddress, &Info) != 0)
+    {
+      if (Info.dli_fname != 0 && Info.dli_sname != 0)
+      {
+        if (Block->pCallingAddress >= Info.dli_saddr)
+        {
+          Position = (long)Block->pCallingAddress - (long)Info.dli_saddr;
+        }
+        else
+        {
+          Position = (long)Info.dli_saddr - (long)Block->pCallingAddress;
+        }
+
+        std::cout << Info.dli_fname << ":" << Info.dli_sname << ((Block->pCallingAddress >= Info.dli_saddr) ? "+" : "-") << Position << "[" << Block->pCallingAddress << "]" << std::endl;
+
+        return;
+      }
+    }
+  }
+
+  std::cout << Block->pCallingAddress << std::endl;
+#else
+  (Block);
+#endif
 }
 
 gc::GarbageCollector& gc::GetInstance() throw(gc::InternalError)
@@ -1115,7 +1151,8 @@ void gc::GarbageCollector::FreeWithTag(void * Address, unsigned long Tag) throw(
     {
         /* Only warn and keep going */
         GCDebug("Freeing " << Address << ", which was corrupted");
-        GCDebug("It has been allocated at : " << CurrentBlock->pCallingAddress);
+        GCDebugNoEndl("It has been allocated at: ");
+        DisplayRequesterName(CurrentBlock);
     }
   }
 
