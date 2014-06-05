@@ -719,19 +719,6 @@ void * gc::GarbageCollector::AllocateWithTag(size_t Size, unsigned int Flags, un
   return (void *)((unsigned int *)Block + 1);
 }
 
-void * calloc(size_t nmemb, size_t size) throw()
-{
-  /* Simple wrapper */
-  try
-  {
-    return gc::GetInstance().Allocate(nmemb * size, PAGED_BLOCK | RAISE_ON_FAILURE | ZEROED_BLOCK);
-  }
-  catch (gc::GCException& e)
-  {
-    return 0;
-  }
-}
-
 void gc::GarbageCollector::CheckForCorruption() const throw(gc::ListCorrupted, gc::MemoryBlockCorrupted)
 {
   unsigned long TotalMemory = 0;
@@ -1036,19 +1023,6 @@ gc::GarbageCollector::MemoryBlock * gc::GarbageCollector::FindBlock(const void *
   return 0;
 }
 
-void free(void * ptr) throw()
-{
-  /* Simple wrapper */
-  try
-  {
-    gc::GetInstance().Free(ptr);
-  }
-  catch (gc::GCException& e)
-  {
-    return;
-  }
-}
-
 void gc::GarbageCollector::Free(void * Address) throw(gc::TooMuchSpace, gc::InvalidAddress, gc::ListCorrupted, gc::InvalidTag, gc::WrongFreer, gc::MemoryBlockCorrupted)
 {
   FreeWithTag(Address, 0UL);
@@ -1282,19 +1256,6 @@ bool gc::GarbageCollector::LockBlock(void * BlockAddress, size_t BlockSize, bool
   return mlock(BlockAddress, AllocateSize) == 0;
 }
 
-void * malloc(size_t size) throw()
-{
-  /* Simple wrapper */
-  try
-  {
-    return gc::GetInstance().Allocate(size, PAGED_BLOCK | RAISE_ON_FAILURE);
-  }
-  catch (gc::GCException& e)
-  {
-    return 0;
-  }
-}
-
 gc::GarbageCollector& gc::GarbageCollector::operator=(const GarbageCollector &inGC) throw(gc::ListCorrupted, gc::MemoryBlockCorrupted)
 {
   if (this != &inGC)
@@ -1323,19 +1284,6 @@ gc::GarbageCollector& gc::GarbageCollector::operator=(const GarbageCollector &in
   }
 
   return *this;
-}
-
-void * realloc(void * ptr, size_t size) throw()
-{
-  /* Simple wrapper */
-  try
-  {
-    return gc::GetInstance().Reallocate(ptr, size);
-  }
-  catch (gc::GCException& e)
-  {
-    return 0;
-  }
 }
 
 void * gc::GarbageCollector::Reallocate(void * Address, size_t Size) throw (gc::InvalidSize, gc::InvalidFlags, gc::ListCorrupted, gc::MemoryBlockCorrupted, gc::NoMemory, gc::NotEnoughSpace, gc::TooMuchSpace, gc::InvalidAddress, gc::InvalidTag, gc::WrongFreer)
@@ -1810,3 +1758,54 @@ void * operator new[](std::size_t size, const std::nothrow_t&) throw()
   OP_NEW_NO_THROW;
 }
 
+void * calloc(size_t nmemb, size_t size) throw()
+{
+  /* Simple wrapper */
+  try
+  {
+    return gc::GetInstance().Allocate(nmemb * size, PAGED_BLOCK | RAISE_ON_FAILURE | ZEROED_BLOCK);
+  }
+  catch (gc::GCException& e)
+  {
+    return 0;
+  }
+}
+
+void free(void * ptr) throw()
+{
+  /* Simple wrapper */
+  try
+  {
+    gc::GetInstance().Free(ptr);
+  }
+  catch (gc::GCException& e)
+  {
+    return;
+  }
+}
+
+void * malloc(size_t size) throw()
+{
+  /* Simple wrapper */
+  try
+  {
+    return gc::GetInstance().Allocate(size, PAGED_BLOCK | RAISE_ON_FAILURE);
+  }
+  catch (gc::GCException& e)
+  {
+    return 0;
+  }
+}
+
+void * realloc(void * ptr, size_t size) throw()
+{
+  /* Simple wrapper */
+  try
+  {
+    return gc::GetInstance().Reallocate(ptr, size);
+  }
+  catch (gc::GCException& e)
+  {
+    return 0;
+  }
+}
