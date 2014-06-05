@@ -82,6 +82,7 @@ gc::GarbageCollector::~GarbageCollector()
                 << "bytes at address: " << CurrentBlock->pBlock);
         GCDebug("It was referenced " << CurrentBlock->uiBlockReferences << " times");
         GCDebug("Thread " << CurrentBlock->ulBlockOwner << " was owning it");
+        GCDebug("It has been allocated at : " << CurrentBlock->pCallingAddress);
         Size += CurrentBlock->uBlockSize;
       }
       /* As we are in debug mode, also perform
@@ -754,6 +755,7 @@ void gc::GarbageCollector::CheckForCorruption() const throw(gc::ListCorrupted, g
             CurrentBlock->bBlockFreed == true)
         {
           GCDebug("In use entry " << CurrentBlock << " seems to be corrupted!");
+          GCDebug("It may have been allocated at: " << CurrentBlock->pCallingAddress);
           mListsLock.Unlock();
           throw ListCorrupted();
         }
@@ -765,6 +767,7 @@ void gc::GarbageCollector::CheckForCorruption() const throw(gc::ListCorrupted, g
         {
           /* Not valid! */
           GCDebug("Memory block at " << CurrentBlock->pBlock << " seems to be corrupted!");
+          GCDebug("It may have been allocated at: " << CurrentBlock->pCallingAddress);
           mListsLock.Unlock();
           throw MemoryBlockCorrupted();
         }
@@ -827,6 +830,7 @@ void gc::GarbageCollector::CheckForCorruption() const throw(gc::ListCorrupted, g
             CurrentBlock->bBlockFreed == false)
         {
           GCDebug("Freed entry " << CurrentBlock << " seems to be corrupted!");
+          GCDebug("It may have been allocated at: " << CurrentBlock->pCallingAddress);
           mListsLock.Unlock();
           throw ListCorrupted();
         }
