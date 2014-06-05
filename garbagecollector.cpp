@@ -702,6 +702,9 @@ void * gc::GarbageCollector::AllocateWithTagInt(size_t Size, unsigned int Flags,
   /* Did caller asked for lookaside block? */
   CurrentBlock->bBlockLookaside = IsFlagOn(Flags, LOOKASIDE_BLOCK);
 
+  /* Did caller asked for raise-free corruption report? */
+  CurrentBlock->bDoNotRaiseCorrupted = IsFlagOn(Flags, DO_NOT_RAISE_IF_CORRUPT_ON_FREE);
+
   /* Did caller asked for initialized block? */
   if (IsFlagOn(Flags, MARKED_BLOCK))
   {
@@ -1101,9 +1104,19 @@ void gc::GarbageCollector::FreeWithTag(void * Address, unsigned long Tag) throw(
   /* Check against memory corruption */
   if (!ValidateBlock(CurrentBlock->pBlock, CurrentBlock->uBlockSize))
   {
-    /* Not valid! */
-    mListsLock.Unlock();
-    throw MemoryBlockCorrupted();
+    /* Not valid!
+     * Check if the user wants a silent fail */
+    if (!CurrentBlock->bDoNotRaiseCorrupted)
+    {
+      mListsLock.Unlock();
+      throw MemoryBlockCorrupted();
+    }
+    else
+    {
+        /* Only warn and keep going */
+        GCDebug("Freeing " << Address << ", which was corrupted");
+        GCDebug("It has been allocated at : " << CurrentBlock->pCallingAddress);
+    }
   }
 
 #ifdef _DBG_

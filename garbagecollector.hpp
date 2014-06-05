@@ -63,19 +63,19 @@ namespace gc
    * you are requesting can be paged by the OS.
    * That is the default flag.
    */
-  #define PAGED_BLOCK      0x0
+  #define PAGED_BLOCK                     0x0
   /**
    * Flag for allocation. It means that the block
    * you are requesting cannot be paged by the OS.
    */
-  #define NON_PAGED_BLOCK  0x1
+  #define NON_PAGED_BLOCK                  0x1
   /**
    * Flag for allocation. It means that if an error
    * occurs while try trying to allocate the block
    * an exception will be thrown. It is up to you
    * to catch it.
    */
-  #define RAISE_ON_FAILURE 0x2
+  #define RAISE_ON_FAILURE                0x2
   /**
    * Flag for allocation. It means that the allocation must
    * succed, whatever may raise during allocation.
@@ -84,32 +84,38 @@ namespace gc
    * Before using it, consider reading AllocateWithTag() documentation
    * and to fully understand it including the associated risks.
    */
-  #define MUST_SUCCEED     0x6
+  #define MUST_SUCCEED                    0x6
   /**
    * Flag for allocation. It means that only the thread that allocated
    * the block can free it.
    */
-  #define OWNER_LOCK       0x8
+  #define OWNER_LOCK                      0x8
   /**
    * Flag for allocation. It means that the block will be filled in
    * with 0 before it is returned.
    */
-  #define ZEROED_BLOCK     0x10
+  #define ZEROED_BLOCK                    0x10
   /**
    * Flag for allocation. It means that the block will be filled in
    * with predefined data before it is returned.
    */
-  #define MARKED_BLOCK     0x20
+  #define MARKED_BLOCK                    0x20
   /**
    * Flag for allocation. It means that the block won't stay in memory
    * forever and will be automatically freed
    */
-  #define CACHING_BLOCK    0x40
+  #define CACHING_BLOCK                   0x40
   /**
    * Flag for allocation. It means that the block will remain in memory
    * even after a free. Reallocation will be faster
    */
-  #define LOOKASIDE_BLOCK  0x90
+  #define LOOKASIDE_BLOCK                 0x90
+  /**
+   * Flag for allocation. It means that on free, if there is a corruption
+   * the block will be freed, and corruption will only be displayed if
+   * possible.
+   */
+  #define DO_NOT_RAISE_IF_CORRUPT_ON_FREE 0x100
 
   /**
    * Small and obvious macro to find
@@ -369,6 +375,7 @@ namespace gc
         size_t uBlockSize; /**< Size requested by the user (vs really allocated). It is 32bits aligned */
         bool bBlockNonPageable; /**< Set to true if the block must stay in RAM */
         bool bBlockWeak; /**< Set to true if the block is a weak block */
+        bool bDoNotRaiseCorrupted; /**< Set to true if FreeWithTag() is not supposed to raise in case of corruption */
         unsigned long ulBlockTag; /**< Contains tag if user specified any */
         unsigned int uiBlockReferences; /**< Number of references pointing to the block */
         unsigned long ulBlockOwner; /**< ID of the thread owner. 0 if lock is unused */
