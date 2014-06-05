@@ -907,61 +907,58 @@ namespace gc
    * @return Garbage collector instance
    */
   GarbageCollector& GetInstance() throw(gc::InternalError);
-
-  namespace OldC
-  {
-    /**
-     * Ancestor.
-     * Allocate new memory block that can contain an array of nmemb.
-     * Block will be initialised with zeros before being returned.
-     * Note that compared to libc calloc, this function allocates blocks
-     * linked in the garbage collector.
-     * @param nmemb Number of elements in the array.
-     * @param size Size of one array element.
-     * @return Allocated block address, or 0 in case of a failure
-     * \internal It is just a simple wrapper to Allocate() function
-     */
-    void * calloc(size_t nmemb, size_t size) throw();
-    /**
-     * Ancestor.
-     * Releases pointer.
-     * Note that you can only give block addresses that have been allocated
-     * by any of the function of this namespace.
-     * @param ptr pointer to release.
-     * @return Nothing
-     * \internal It is just a simple wrapper to Free() function
-     */
-    void free(void * ptr) throw();
-    /**
-     * Ancestor.
-     * Allocate new memory block size big.
-     * Note that compared to libc malloc, this function allocates blocks
-     * linked in the garbage collector.
-     * @param size Size of the memory block to allocate.
-     * @return Allocated block address, or 0 in case of a failure
-     * \internal It is just a simple wrapper to Allocate() function
-     */
-    void * malloc(size_t size) throw();
-    /**
-     * Ancestor.
-     * Used to reallocate a previously allocated block with new size.
-     * If the size is 0, then, the block will be freed.
-     * If the address is null, then a new block is allocated.
-     * Note that you can only give block addresses that have been allocated
-     * by any of the function of this namespace.
-     * Note that contrary of "real" realloc function, most of the time, here,
-     * ptr will be relocated, so you cannot ignore function return.
-     * @param ptr Address of the block to realloc.
-     * @param size New size of the block.
-     * @return Reallocated block address, or 0 in case of a failure
-     * \warning Do not fall into common mistake. In case of reallocation
-     * failure (ie, return being 0), previous block is kept. Which means
-     * that pointer you gave with ptr is STILL VALID.
-     * \internal It is just a simple wrapper to Reallocate() function
-     */
-     void * realloc(void * ptr, size_t size) throw();
-  }
 }
+
+/**
+ * Ancestor.
+ * Allocate new memory block that can contain an array of nmemb.
+ * Block will be initialised with zeros before being returned.
+ * Note that compared to libc calloc, this function allocates blocks
+ * linked in the garbage collector.
+ * @param nmemb Number of elements in the array.
+ * @param size Size of one array element.
+ * @return Allocated block address, or 0 in case of a failure
+ * \internal It is just a simple wrapper to Allocate() function
+ */
+extern "C" void * calloc(size_t nmemb, size_t size) throw();
+/**
+ * Ancestor.
+ * Releases pointer.
+ * Note that you can only give block addresses that have been allocated
+ * by any of the function of this namespace.
+ * @param ptr pointer to release.
+ * @return Nothing
+ * \internal It is just a simple wrapper to Free() function
+ */
+extern "C" void free(void * ptr) throw();
+/**
+ * Ancestor.
+ * Allocate new memory block size big.
+ * Note that compared to libc malloc, this function allocates blocks
+ * linked in the garbage collector.
+ * @param size Size of the memory block to allocate.
+ * @return Allocated block address, or 0 in case of a failure
+ * \internal It is just a simple wrapper to Allocate() function
+ */
+extern "C" void * malloc(size_t size) throw();
+/**
+ * Ancestor.
+ * Used to reallocate a previously allocated block with new size.
+ * If the size is 0, then, the block will be freed.
+ * If the address is null, then a new block is allocated.
+ * Note that you can only give block addresses that have been allocated
+ * by any of the function of this namespace.
+ * Note that contrary of "real" realloc function, most of the time, here,
+ * ptr will be relocated, so you cannot ignore function return.
+ * @param ptr Address of the block to realloc.
+ * @param size New size of the block.
+ * @return Reallocated block address, or 0 in case of a failure
+ * \warning Do not fall into common mistake. In case of reallocation
+ * failure (ie, return being 0), previous block is kept. Which means
+ * that pointer you gave with ptr is STILL VALID.
+ * \internal It is just a simple wrapper to Reallocate() function
+ */
+extern "C" void * realloc(void * ptr, size_t size) throw();
 
 /**
  * Overload for C++ delete operator.

@@ -719,14 +719,14 @@ void * gc::GarbageCollector::AllocateWithTag(size_t Size, unsigned int Flags, un
   return (void *)((unsigned int *)Block + 1);
 }
 
-void * gc::OldC::calloc(size_t nmemb, size_t size) throw()
+void * calloc(size_t nmemb, size_t size) throw()
 {
   /* Simple wrapper */
   try
   {
-    return GetInstance().Allocate(nmemb * size, PAGED_BLOCK | RAISE_ON_FAILURE | ZEROED_BLOCK);
+    return gc::GetInstance().Allocate(nmemb * size, PAGED_BLOCK | RAISE_ON_FAILURE | ZEROED_BLOCK);
   }
-  catch (GCException& e)
+  catch (gc::GCException& e)
   {
     return 0;
   }
@@ -1036,14 +1036,14 @@ gc::GarbageCollector::MemoryBlock * gc::GarbageCollector::FindBlock(const void *
   return 0;
 }
 
-void gc::OldC::free(void * ptr) throw()
+void free(void * ptr) throw()
 {
   /* Simple wrapper */
   try
   {
-    GetInstance().Free(ptr);
+    gc::GetInstance().Free(ptr);
   }
-  catch (GCException& e)
+  catch (gc::GCException& e)
   {
     return;
   }
@@ -1282,14 +1282,14 @@ bool gc::GarbageCollector::LockBlock(void * BlockAddress, size_t BlockSize, bool
   return mlock(BlockAddress, AllocateSize) == 0;
 }
 
-void * gc::OldC::malloc(size_t size) throw()
+void * malloc(size_t size) throw()
 {
   /* Simple wrapper */
   try
   {
-    return GetInstance().Allocate(size, PAGED_BLOCK | RAISE_ON_FAILURE);
+    return gc::GetInstance().Allocate(size, PAGED_BLOCK | RAISE_ON_FAILURE);
   }
-  catch (GCException& e)
+  catch (gc::GCException& e)
   {
     return 0;
   }
@@ -1323,14 +1323,14 @@ gc::GarbageCollector& gc::GarbageCollector::operator=(const GarbageCollector &in
   return *this;
 }
 
-void * gc::OldC::realloc(void * ptr, size_t size) throw()
+void * realloc(void * ptr, size_t size) throw()
 {
   /* Simple wrapper */
   try
   {
-    return GetInstance().Reallocate(ptr, size);
+    return gc::GetInstance().Reallocate(ptr, size);
   }
-  catch (GCException& e)
+  catch (gc::GCException& e)
   {
     return 0;
   }
