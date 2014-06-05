@@ -9,11 +9,7 @@
  * To use the mutex in one application, just include mutex.hpp and build mutex.cpp
  */
 
-#ifdef _WIN32
-#include <windows.h>
-#else
 #include <pthread.h>
-#endif
 
 /**
  * \brief Main mutex class.
@@ -21,20 +17,11 @@
 class Mutex
 {
   private:
-#ifdef _WIN32
-    /**
-     * \internal
-     * The mutex lock itself.
-     * In case of a Windows build, it is just an handle.
-     */
-    HANDLE hMutexLock;
-#else
     /**
      * \internal
      * The mutex lock itself.
      */
     pthread_mutex_t MutexLock;
-#endif
 
   public:
     /**

@@ -12,14 +12,10 @@
 #include <new>
 #include <cstring>
 #include <exception>
-#ifdef _WIN32
-#include <windows.h>
-#else
 #include <cstdlib>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <sys/syscall.h>
-#endif
 #include "mutex.hpp"
 #define _DBG_
 #ifdef _DBG_
@@ -33,10 +29,6 @@
  * and all the required defines. Feel free to use using namespace gc;
  * in your code.
  *
- * \todo Porting all that namespace to Windows without loosing any property.
- * See Heap, Virtual Memory, and perhaps kernel space.
- * See VirtualLock as well.
- * Here, operator new will be most likely useless.
  */
 namespace gc
 {

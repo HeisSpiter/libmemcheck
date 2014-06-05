@@ -141,11 +141,7 @@ void * gc::GarbageCollector::AllocateBlock(size_t Size, bool NonPageable, bool Z
   }
 
   /* Try to allocate memory */
-#ifdef _WIN32
-  MemoryBlock = VirtualAlloc(NULL, AllocateSize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-#else
   MemoryBlock = malloc(AllocateSize);
-#endif
   /* If we have memory block */
   if (MemoryBlock != 0)
   {
@@ -1060,11 +1056,7 @@ void gc::GarbageCollector::FreeBlock(void * BlockAddress, bool NonPaged, size_t 
     (void)UnlockBlock(BlockAddress, AllocatedSize, true);
   }
 
-#ifdef _WIN32
-  VirtualFree(BlockAddress, 0, MEM_RELEASE);
-#else
   free(BlockAddress);
-#endif
 
   /* Now, decrease total allocated */
   ulTotalAllocated -= AllocatedSize;
@@ -1167,12 +1159,8 @@ void gc::GarbageCollector::FreeWithTag(void * Address, unsigned long Tag) throw(
 
 unsigned long gc::GarbageCollector::GetThreadID() const throw()
 {
-#ifdef _WIN32
-  return (unsigned long)GetCurrentThreadId();
-#else
   /* It is not exported by GLibc */
   return (unsigned long)syscall(SYS_gettid);
-#endif
 }
 
 unsigned long gc::GarbageCollector::GetTotalAllocated() const throw()
@@ -1274,11 +1262,7 @@ bool gc::GarbageCollector::LockBlock(void * BlockAddress, size_t BlockSize, bool
     AllocateSize = BlockSize;
   }
 
-#ifdef _WIN32
-  return VirtualLock(BlockAddress, AllocateSize);
-#else
   return mlock(BlockAddress, AllocateSize) == 0;
-#endif
 }
 
 void * gc::OldC::malloc(size_t size) throw()
@@ -1703,11 +1687,7 @@ bool gc::GarbageCollector::UnlockBlock(void * BlockAddress, size_t BlockSize, bo
     AllocateSize = BlockSize;
   }
 
-#ifdef _WIN32
-  return VirtualUnlock(BlockAddress, AllocateSize);
-#else
   return munlock(BlockAddress, AllocateSize) == 0;
-#endif
 }
 
 bool gc::GarbageCollector::ValidateBlock(const void * BlockAddress, size_t Size) const throw(gc::ListCorrupted)
