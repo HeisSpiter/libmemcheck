@@ -133,7 +133,7 @@ gc::GarbageCollector::~GarbageCollector()
 
 void * gc::GarbageCollector::Allocate(size_t Size, unsigned int Flags) throw(gc::InvalidSize, gc::InvalidFlags, gc::ListCorrupted, gc::MemoryBlockCorrupted, gc::NoMemory, gc::NotEnoughSpace)
 {
-  return AllocateWithTag(Size, Flags, 0UL);
+  return AllocateWithTagInt(Size, Flags, 0UL);
 }
 
 void * gc::GarbageCollector::AllocateBlock(size_t Size, bool NonPageable, bool ZeroBlock, bool NotExtended, bool MustSucceed) throw(gc::ListCorrupted)
@@ -200,6 +200,11 @@ void * gc::GarbageCollector::AllocateBlock(size_t Size, bool NonPageable, bool Z
 }
 
 void * gc::GarbageCollector::AllocateWithTag(size_t Size, unsigned int Flags, unsigned long Tag) throw(gc::InvalidSize, gc::InvalidFlags, gc::ListCorrupted, gc::MemoryBlockCorrupted, gc::NoMemory, gc::NotEnoughSpace)
+{
+    return AllocateWithTagInt(Size, Flags, Tag);
+}
+
+void * gc::GarbageCollector::AllocateWithTagInt(size_t Size, unsigned int Flags, unsigned long Tag) throw(gc::InvalidSize, gc::InvalidFlags, gc::ListCorrupted, gc::MemoryBlockCorrupted, gc::NoMemory, gc::NotEnoughSpace)
 {
   void * Block;
   unsigned int k;
@@ -1289,7 +1294,7 @@ void * gc::GarbageCollector::ReallocateWithTag(void * Address, size_t Size, unsi
   /* In case caller is passing null address, -> allocate */
   if (Address == 0)
   {
-    return AllocateWithTag(Size, PAGED_BLOCK, Tag);
+    return AllocateWithTagInt(Size, PAGED_BLOCK, Tag);
   }
 
   /* In case caller did not provide size, -> free */
@@ -1699,14 +1704,14 @@ void operator delete[](void * ptr, const std::nothrow_t&) throw()
  * Macro for C++ new operator overloads that throw exception.
  * It is a simple wrapper to Allocate() method.
  */
-#define OP_NEW_THROW                                                         \
-  try                                                                        \
-  {                                                                          \
-    return gc::GetInstance().Allocate(size, PAGED_BLOCK | RAISE_ON_FAILURE); \
-  }                                                                          \
-  catch (gc::GCException& e)                                                 \
-  {                                                                          \
-    throw std::bad_alloc();                                                  \
+#define OP_NEW_THROW                                                                        \
+  try                                                                                       \
+  {                                                                                         \
+    return gc::GetInstance().AllocateWithTagInt(size, PAGED_BLOCK | RAISE_ON_FAILURE, 0UL); \
+  }                                                                                         \
+  catch (gc::GCException& e)                                                                \
+  {                                                                                         \
+    throw std::bad_alloc();                                                                 \
   }
 
 /**
@@ -1714,14 +1719,14 @@ void operator delete[](void * ptr, const std::nothrow_t&) throw()
  * Macro for C++ new operator overloads that do not throw exception.
  * It is a simple wrapper to Allocate() method.
  */
-#define OP_NEW_NO_THROW                                                      \
-  try                                                                        \
-  {                                                                          \
-    return gc::GetInstance().Allocate(size, PAGED_BLOCK | RAISE_ON_FAILURE); \
-  }                                                                          \
-  catch (gc::GCException& e)                                                 \
-  {                                                                          \
-    return 0;                                                                \
+#define OP_NEW_NO_THROW                                                                     \
+  try                                                                                       \
+  {                                                                                         \
+    return gc::GetInstance().AllocateWithTagInt(size, PAGED_BLOCK | RAISE_ON_FAILURE, 0UL); \
+  }                                                                                         \
+  catch (gc::GCException& e)                                                                \
+  {                                                                                         \
+    return 0;                                                                               \
   }
 
 void * operator new(std::size_t size) throw (std::bad_alloc)
@@ -1749,7 +1754,7 @@ void * calloc(size_t nmemb, size_t size) throw()
   /* Simple wrapper */
   try
   {
-    return gc::GetInstance().Allocate(nmemb * size, PAGED_BLOCK | RAISE_ON_FAILURE | ZEROED_BLOCK);
+    return gc::GetInstance().AllocateWithTagInt(nmemb * size, PAGED_BLOCK | RAISE_ON_FAILURE | ZEROED_BLOCK, 0UL);
   }
   catch (gc::GCException& e)
   {
@@ -1775,7 +1780,7 @@ void * malloc(size_t size) throw()
   /* Simple wrapper */
   try
   {
-    return gc::GetInstance().Allocate(size, PAGED_BLOCK | RAISE_ON_FAILURE);
+    return gc::GetInstance().AllocateWithTagInt(size, PAGED_BLOCK | RAISE_ON_FAILURE, 0UL);
   }
   catch (gc::GCException& e)
   {

@@ -486,6 +486,21 @@ namespace gc
       void * AllocateBlock(size_t Size, bool NonPageable, bool ZeroBlock, bool NotExtended = false, bool MustSucceed = false) throw(ListCorrupted);
       /**
        * \internal
+       * This is really the allocating function.
+       * It should always be called from wrappers not to mess up with stack
+       * Check AllocateWithTag for complete documentation.
+       * @param Size Size of the memory you want to use
+       * @param Flags Options that will change the way function will allocate memory
+       * @param Tag Four letters that will be associated to memory block
+       * @return Memory block address in case of success, 0 otherwise
+       * @see AllocateWithTag()
+       * \warning To respect caller hierarchy, it's highly recommended to use it in any
+       * allocating function exposed to the user.
+       */
+      void * AllocateWithTagInt(size_t Size, unsigned int Flags, unsigned long Tag)
+        throw(InvalidSize, InvalidFlags, ListCorrupted, MemoryBlockCorrupted, NoMemory, NotEnoughSpace);
+      /**
+       * \internal
        * It looks through the linked lists in order to find the real address of the
        * user given address. In case it finds it, it will return its corresponding
        * MemoryBlock entry. In case it does not find it, it will throw an exception and
@@ -900,6 +915,13 @@ namespace gc
       bool SetMemoryLimit(unsigned long MaxSize = INIT_MEM_SIZE) throw();
 
       friend GarbageCollector& GetInstance() throw(InternalError);
+
+      friend void * ::calloc(size_t nmemb, size_t size) throw();
+      friend void * ::malloc(size_t size) throw();
+      friend void * ::operator new(std::size_t size) throw (std::bad_alloc);
+      friend void * ::operator new[](std::size_t size) throw (std::bad_alloc);
+      friend void * ::operator new(std::size_t size, const std::nothrow_t&) throw();
+      friend void * ::operator new[](std::size_t size, const std::nothrow_t&) throw();
   };
 
   /**
