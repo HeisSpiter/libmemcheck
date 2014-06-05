@@ -746,7 +746,6 @@ void gc::GarbageCollector::CheckForCorruption() const throw(gc::ListCorrupted, g
           GCDebug("In use entry " << CurrentBlock << " seems to be corrupted!");
           mListsLock.Unlock();
           throw ListCorrupted();
-          return;
         }
 
         /* In case we have an entry in use, really check
@@ -758,7 +757,6 @@ void gc::GarbageCollector::CheckForCorruption() const throw(gc::ListCorrupted, g
           GCDebug("Memory block at " << CurrentBlock->pBlock << " seems to be corrupted!");
           mListsLock.Unlock();
           throw MemoryBlockCorrupted();
-          return;
         }
 
         /* Add sizes to total allocated */
@@ -783,7 +781,6 @@ void gc::GarbageCollector::CheckForCorruption() const throw(gc::ListCorrupted, g
     GCDebug("In use list links lost, consider shutting down program immediately!");
     mListsLock.Unlock();
     throw ListCorrupted();
-    return;
   }
 
   /* Check whether there are no too many entries */
@@ -791,7 +788,6 @@ void gc::GarbageCollector::CheckForCorruption() const throw(gc::ListCorrupted, g
   {
     mListsLock.Unlock();
     throw ListCorrupted();
-    return;
   }
 
   /* Check for counter consistency */
@@ -799,13 +795,11 @@ void gc::GarbageCollector::CheckForCorruption() const throw(gc::ListCorrupted, g
   {
     mListsLock.Unlock();
     throw ListCorrupted();
-    return;
   }
   if (WeakEntries != uiWeakCount)
   {
     mListsLock.Unlock();
     throw ListCorrupted();
-    return;
   }
 
   /* Now, check freed list */
@@ -825,7 +819,6 @@ void gc::GarbageCollector::CheckForCorruption() const throw(gc::ListCorrupted, g
           GCDebug("Freed entry " << CurrentBlock << " seems to be corrupted!");
           mListsLock.Unlock();
           throw ListCorrupted();
-          return;
         }
 
         /* Add size to total allocated */
@@ -851,7 +844,6 @@ void gc::GarbageCollector::CheckForCorruption() const throw(gc::ListCorrupted, g
     GCDebug("In use list links lost, consider shutting down program immediately!");
     mListsLock.Unlock();
     throw ListCorrupted();
-    return;
   }
 
   /* Check against data being non-consistent */
@@ -859,13 +851,11 @@ void gc::GarbageCollector::CheckForCorruption() const throw(gc::ListCorrupted, g
   {
     mListsLock.Unlock();
     throw ListCorrupted();
-    return;
   }
   if (TotalMemory > ulMaxBytes)
   {
     mListsLock.Unlock();
     throw ListCorrupted();
-    return;
   }
 
   /* Check for counter consistency */
@@ -873,13 +863,11 @@ void gc::GarbageCollector::CheckForCorruption() const throw(gc::ListCorrupted, g
   {
     mListsLock.Unlock();
     throw ListCorrupted();
-    return;
   }
   if (LookasideEntries != uiLookasideCount)
   {
     mListsLock.Unlock();
     throw ListCorrupted();
-    return;
   }
 
   mListsLock.Unlock();
@@ -1076,7 +1064,6 @@ void gc::GarbageCollector::FreeWithTag(void * Address, unsigned long Tag) throw(
   {
     mListsLock.Unlock();
     throw;
-    return;
   }
 
   /* Passed that point, everything must be OK! */
@@ -1087,7 +1074,6 @@ void gc::GarbageCollector::FreeWithTag(void * Address, unsigned long Tag) throw(
   {
     mListsLock.Unlock();
     throw InvalidTag();
-    return;
   }
 
   /* Check against matching owner */
@@ -1096,7 +1082,6 @@ void gc::GarbageCollector::FreeWithTag(void * Address, unsigned long Tag) throw(
   {
     mListsLock.Unlock();
     throw WrongFreer();
-    return;
   }
 
   /* Check against memory corruption */
@@ -1105,7 +1090,6 @@ void gc::GarbageCollector::FreeWithTag(void * Address, unsigned long Tag) throw(
     /* Not valid! */
     mListsLock.Unlock();
     throw MemoryBlockCorrupted();
-    return;
   }
 
 #ifdef _DBG_
