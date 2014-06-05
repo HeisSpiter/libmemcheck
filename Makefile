@@ -7,7 +7,7 @@ OBJ	= mutex.o garbagecollector.o
 all: $(LIB)
 
 $(LIB): mutex.o garbagecollector.o
-	$(CXX) $(CXXFLAGS) -shared -o $(LIB) $(OBJ)
+	$(CXX) $(CXXFLAGS) -shared -o $(LIB) $(OBJ) -ldl
 
 %.o: %.cpp
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
