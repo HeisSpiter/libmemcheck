@@ -158,7 +158,7 @@ void * gc::GarbageCollector::AllocateBlock(size_t Size, bool NonPageable, bool Z
   }
 
   /* Try to allocate memory */
-  MemoryBlock = malloc(AllocateSize);
+  MemoryBlock = pSystemMalloc(AllocateSize);
   /* If we have memory block */
   if (MemoryBlock != 0)
   {
@@ -1073,7 +1073,7 @@ void gc::GarbageCollector::FreeBlock(void * BlockAddress, bool NonPaged, size_t 
     (void)UnlockBlock(BlockAddress, AllocatedSize, true);
   }
 
-  free(BlockAddress);
+  pSystemFree(BlockAddress);
 
   /* Now, decrease total allocated */
   ulTotalAllocated -= AllocatedSize;
