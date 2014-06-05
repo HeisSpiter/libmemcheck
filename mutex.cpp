@@ -1,6 +1,8 @@
 /*! \file mutex.cpp
  * \brief Mutex implementation file.
  * \author Pierre Schweitzer
+ * \copyright Copyright 2011 - 2014. All rights reserved.
+ * This project is released under the GNU General Public License version 2.
  *
  * That file contains all the implementations for the mutex.
  * Build it when using mutex. And include header.

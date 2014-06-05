@@ -4,6 +4,8 @@
 /*! \file mutex.hpp
  * \brief Mutex definition header.
  * \author Pierre Schweitzer
+ * \copyright Copyright 2011 - 2014. All rights reserved.
+ * This project is released under the GNU General Public License version 2.
  *
  * That file contains all the definitions needed to successfully use the mutex.
  * To use the mutex in one application, just include mutex.hpp and build mutex.cpp

@@ -1,6 +1,8 @@
 /*! \file garbagecollector.cpp
  * \brief Garbage Collector implementation file.
  * \author Pierre Schweitzer
+ * \copyright Copyright 2011 - 2014. All rights reserved.
+ * This project is released under the GNU General Public License version 2.
  *
  * That file contains all the implementations for the garbage collector.
  * Build it when using garbage collector. And include header.
