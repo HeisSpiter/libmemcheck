@@ -374,6 +374,7 @@ namespace gc
         unsigned long ulBlockOwner; /**< ID of the thread owner. 0 if lock is unused */
         bool bBlockFreed; /**< Set to true if block is freed */
         bool bBlockLookaside; /**< Set to true if block is lookaside */
+        void * pCallingAddress; /**< Address in binary where the allocation has been requested */
         struct MemoryBlock * pNextBlock; /**< Pointer to the next block */
         struct MemoryBlock * pPrevBlock; /**< Pointer to the previous block */
       };
@@ -496,9 +497,11 @@ namespace gc
        * @see AllocateWithTag()
        * \warning To respect caller hierarchy, it's highly recommended to use it in any
        * allocating function exposed to the user.
+       * \warning This is also for this reason that this function has not to be inlined
        */
       void * AllocateWithTagInt(size_t Size, unsigned int Flags, unsigned long Tag)
-        throw(InvalidSize, InvalidFlags, ListCorrupted, MemoryBlockCorrupted, NoMemory, NotEnoughSpace);
+        throw(InvalidSize, InvalidFlags, ListCorrupted, MemoryBlockCorrupted, NoMemory, NotEnoughSpace)
+        __attribute__((noinline));
       /**
        * \internal
        * It looks through the linked lists in order to find the real address of the

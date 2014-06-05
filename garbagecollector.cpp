@@ -710,6 +710,11 @@ void * gc::GarbageCollector::AllocateWithTagInt(size_t Size, unsigned int Flags,
     }
   }
 
+  /* Who's the requester?
+   * We use 1 here, because 0 is a function of our library
+   */
+  CurrentBlock->pCallingAddress = __builtin_return_address(1);
+
   /* If required, insert entry in list */
   if (CurrentBlock->pNextBlock == 0)
   {
