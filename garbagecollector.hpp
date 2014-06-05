@@ -16,6 +16,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <sys/syscall.h>
+#include <dlfcn.h>
 #include "mutex.hpp"
 #define _DBG_
 #ifdef _DBG_
@@ -316,6 +317,13 @@ namespace gc
    * corrupted (written beyond and/or before). You shouldn't ignore such exception.
    */
   DefineException(MemoryBlockCorrupted, "The required memory block seems to be corrupted. Check you program!");
+  /**
+   * \brief Garbage collector exception
+   *
+   * This exception is thrown when the garbage collector encounters an internal error that
+   * cannot be recovered. You cannot ignore such exception.
+   */
+  DefineException(InternalError, "The garbage collector encountered a non-recoverable error and will likely not work!");
 
   /**
    * \brief Main garbage collector class.
@@ -425,13 +433,24 @@ namespace gc
 
       /**
        * \internal
+       * Pointer to the system malloc syscall
+       */
+      void * (* pSystemMalloc)(size_t);
+      /**
+       * \internal
+       * Pointer to the system malloc syscall
+       */
+      void (* pSystemFree)(void *);
+
+      /**
+       * \internal
        * Garbage Collector constructor.
        *
        * It just allocates internal linked lists and initiate them. It also
        * sets predefined settings.
        * @return Nothing
        */
-      GarbageCollector() throw();
+      GarbageCollector() throw(InternalError);
       /**
        * \internal
        * Garbage Collector copy constructor.
@@ -878,7 +897,7 @@ namespace gc
        */
       bool SetMemoryLimit(unsigned long MaxSize = INIT_MEM_SIZE) throw();
 
-      friend GarbageCollector& GetInstance() throw();
+      friend GarbageCollector& GetInstance() throw(InternalError);
   };
 
   /**
@@ -887,7 +906,7 @@ namespace gc
    * exists.
    * @return Garbage collector instance
    */
-  GarbageCollector& GetInstance() throw();
+  GarbageCollector& GetInstance() throw(gc::InternalError);
 
   namespace OldC
   {

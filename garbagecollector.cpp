@@ -8,7 +8,7 @@
 
 #include "garbagecollector.hpp"
 
-gc::GarbageCollector::GarbageCollector() throw()
+gc::GarbageCollector::GarbageCollector() throw(gc::InternalError)
 {
   /* Initialize attributes */
   SetAllocationsLimit();
@@ -20,6 +20,21 @@ gc::GarbageCollector::GarbageCollector() throw()
   pmbAllocated = 0;
   pmbFreed = 0;
   ulTotalAllocated = 0;
+
+  /* Get system malloc */
+  pSystemMalloc = (void * (*)(size_t))dlsym(RTLD_NEXT, "malloc");
+  if (pSystemMalloc == 0)
+  {
+    GCDebug("Failed to get system malloc()");
+    throw InternalError();
+  }
+
+  pSystemFree = (void (*)(void *))dlsym(RTLD_NEXT, "free");
+  if (pSystemFree == 0)
+  {
+    GCDebug("Failed to get system free()");
+    throw InternalError();
+  }
 }
 
 gc::GarbageCollector::GarbageCollector(const gc::GarbageCollector& inGC) throw()
@@ -34,6 +49,8 @@ gc::GarbageCollector::GarbageCollector(const gc::GarbageCollector& inGC) throw()
   pmbFreed = inGC.pmbFreed;
   ulTotalAllocated = inGC.ulTotalAllocated;
   ulMaxBytes = inGC.ulMaxBytes;
+  pSystemMalloc = inGC.pSystemMalloc;
+  pSystemFree = inGC.pSystemFree;
 }
 
 gc::GarbageCollector::~GarbageCollector()
@@ -926,7 +943,7 @@ void gc::GarbageCollector::Dereference(void * Address) throw(gc::TooMuchSpace, g
   return;
 }
 
-gc::GarbageCollector& gc::GetInstance() throw()
+gc::GarbageCollector& gc::GetInstance() throw(gc::InternalError)
 {
   static GarbageCollector Instance;
   return Instance;
