@@ -137,7 +137,7 @@ void * gc::GarbageCollector::Allocate(size_t Size, unsigned int Flags) throw(gc:
   return AllocateWithTagInt(Size, Flags, 0UL);
 }
 
-void * gc::GarbageCollector::AllocateBlock(size_t Size, bool NonPageable, bool ZeroBlock, bool NotExtended, bool MustSucceed) throw(gc::ListCorrupted)
+void * gc::GarbageCollector::AllocateBlock(size_t Size, bool NonPageable, bool ZeroBlock, bool NotExtended, bool MustSucceed) throw(gc::InternalError)
 {
   void * MemoryBlock;
   size_t AllocateSize;
@@ -200,12 +200,12 @@ void * gc::GarbageCollector::AllocateBlock(size_t Size, bool NonPageable, bool Z
   return MemoryBlock;
 }
 
-void * gc::GarbageCollector::AllocateWithTag(size_t Size, unsigned int Flags, unsigned long Tag) throw(gc::InvalidSize, gc::InvalidFlags, gc::ListCorrupted, gc::MemoryBlockCorrupted, gc::NoMemory, gc::NotEnoughSpace)
+void * gc::GarbageCollector::AllocateWithTag(size_t Size, unsigned int Flags, unsigned long Tag) throw(gc::InternalError, gc::InvalidSize, gc::InvalidFlags, gc::MemoryBlockCorrupted, gc::NoMemory, gc::NotEnoughSpace)
 {
     return AllocateWithTagInt(Size, Flags, Tag);
 }
 
-void * gc::GarbageCollector::AllocateWithTagInt(size_t Size, unsigned int Flags, unsigned long Tag) throw(gc::InvalidSize, gc::InvalidFlags, gc::ListCorrupted, gc::MemoryBlockCorrupted, gc::NoMemory, gc::NotEnoughSpace)
+void * gc::GarbageCollector::AllocateWithTagInt(size_t Size, unsigned int Flags, unsigned long Tag) throw(gc::InternalError, gc::InvalidSize, gc::InvalidFlags, gc::MemoryBlockCorrupted, gc::NoMemory, gc::NotEnoughSpace)
 {
   void * Block;
   unsigned int k;
@@ -890,7 +890,7 @@ void gc::GarbageCollector::CheckForCorruption() const throw(gc::ListCorrupted, g
   return;
 }
 
-void gc::GarbageCollector::Dereference(void * Address) throw(gc::TooMuchSpace, gc::InvalidAddress, gc::ListCorrupted, gc::InvalidTag, gc::WrongFreer, gc::MemoryBlockCorrupted)
+void gc::GarbageCollector::Dereference(void * Address) throw(gc::InternalError, gc::TooMuchSpace, gc::InvalidAddress, gc::ListCorrupted, gc::InvalidTag, gc::WrongFreer, gc::MemoryBlockCorrupted)
 {
   MemoryBlock * CurrentBlock;
 
@@ -940,7 +940,7 @@ gc::GarbageCollector& gc::GetInstance() throw(gc::InternalError)
   return Instance;
 }
 
-gc::GarbageCollector::MemoryBlock * gc::GarbageCollector::FindBlock(const void * UserAddress, bool MustBeValid) const throw(gc::TooMuchSpace, gc::InvalidAddress, gc::ListCorrupted)
+gc::GarbageCollector::MemoryBlock * gc::GarbageCollector::FindBlock(const void * UserAddress, bool MustBeValid) const throw(gc::InternalError, gc::TooMuchSpace, gc::InvalidAddress, gc::ListCorrupted)
 {
   MemoryBlock * CurrentBlock;
   void * RealAddress;
@@ -1027,7 +1027,7 @@ gc::GarbageCollector::MemoryBlock * gc::GarbageCollector::FindBlock(const void *
   return 0;
 }
 
-void gc::GarbageCollector::Free(void * Address) throw(gc::TooMuchSpace, gc::InvalidAddress, gc::ListCorrupted, gc::InvalidTag, gc::WrongFreer, gc::MemoryBlockCorrupted)
+void gc::GarbageCollector::Free(void * Address) throw(gc::InternalError, gc::TooMuchSpace, gc::InvalidAddress, gc::ListCorrupted, gc::InvalidTag, gc::WrongFreer, gc::MemoryBlockCorrupted)
 {
   FreeWithTag(Address, 0UL);
 
@@ -1059,7 +1059,7 @@ void gc::GarbageCollector::FreeBlock(void * BlockAddress, bool NonPaged, size_t 
   return;
 }
 
-void gc::GarbageCollector::FreeWithTag(void * Address, unsigned long Tag) throw(gc::TooMuchSpace, gc::InvalidAddress, gc::ListCorrupted, gc::InvalidTag, gc::WrongFreer, gc::MemoryBlockCorrupted)
+void gc::GarbageCollector::FreeWithTag(void * Address, unsigned long Tag) throw(gc::InternalError, gc::TooMuchSpace, gc::InvalidAddress, gc::ListCorrupted, gc::InvalidTag, gc::WrongFreer, gc::MemoryBlockCorrupted)
 {
   MemoryBlock * CurrentBlock;
 
@@ -1235,7 +1235,7 @@ void gc::GarbageCollector::LinkEntry(MemoryBlock ** ListHead, MemoryBlock * Entr
   return;
 }
 
-bool gc::GarbageCollector::LockBlock(void * BlockAddress, size_t BlockSize, bool IsNotExtended) throw(gc::ListCorrupted)
+bool gc::GarbageCollector::LockBlock(void * BlockAddress, size_t BlockSize, bool IsNotExtended) throw(gc::InternalError)
 {
   size_t AllocateSize;
 
@@ -1291,7 +1291,7 @@ void * gc::GarbageCollector::Reallocate(void * Address, size_t Size) throw (gc::
   return ReallocateWithTag(Address, Size, 0UL);
 }
 
-void * gc::GarbageCollector::ReallocateWithTag(void * Address, size_t Size, unsigned long Tag) throw (gc::InvalidSize, gc::InvalidFlags, gc::ListCorrupted, gc::MemoryBlockCorrupted, gc::NoMemory, gc::NotEnoughSpace, gc::TooMuchSpace, gc::InvalidAddress, gc::InvalidTag, gc::WrongFreer)
+void * gc::GarbageCollector::ReallocateWithTag(void * Address, size_t Size, unsigned long Tag) throw (gc::InternalError, gc::InvalidSize, gc::InvalidFlags, gc::ListCorrupted, gc::MemoryBlockCorrupted, gc::NoMemory, gc::NotEnoughSpace, gc::TooMuchSpace, gc::InvalidAddress, gc::InvalidTag, gc::WrongFreer)
 {
   void * Block;
   size_t RealSize;
@@ -1528,7 +1528,7 @@ void * gc::GarbageCollector::ReallocateWithTag(void * Address, size_t Size, unsi
   return (void *)((unsigned int *)Block + 1);
 }
 
-void gc::GarbageCollector::Reference(void * Address) throw(gc::ListCorrupted)
+void gc::GarbageCollector::Reference(void * Address) throw(gc::InternalError)
 {
   MemoryBlock * CurrentBlock;
 
@@ -1636,7 +1636,7 @@ void gc::GarbageCollector::UnlinkEntry(MemoryBlock ** ListHead, MemoryBlock * En
   return;
 }
 
-bool gc::GarbageCollector::UnlockBlock(void * BlockAddress, size_t BlockSize, bool IsNotExtended) throw(gc::ListCorrupted)
+bool gc::GarbageCollector::UnlockBlock(void * BlockAddress, size_t BlockSize, bool IsNotExtended) throw(gc::InternalError)
 {
   size_t AllocateSize;
 
@@ -1657,7 +1657,7 @@ bool gc::GarbageCollector::UnlockBlock(void * BlockAddress, size_t BlockSize, bo
   return munlock(BlockAddress, AllocateSize) == 0;
 }
 
-bool gc::GarbageCollector::ValidateBlock(const void * BlockAddress, size_t Size) const throw(gc::ListCorrupted)
+bool gc::GarbageCollector::ValidateBlock(const void * BlockAddress, size_t Size) const throw(gc::InternalError)
 {
   /* Passed that point, address must be valid */
   GCAssert(BlockAddress != 0);

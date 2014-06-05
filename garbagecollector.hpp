@@ -484,7 +484,7 @@ namespace gc
        * \warning Beware when a block is asked to be non-pageable and the lock fails, the
        * function returns the address of the allocated block made odd!
        */
-      void * AllocateBlock(size_t Size, bool NonPageable, bool ZeroBlock, bool NotExtended = false, bool MustSucceed = false) throw(ListCorrupted);
+      void * AllocateBlock(size_t Size, bool NonPageable, bool ZeroBlock, bool NotExtended = false, bool MustSucceed = false) throw(InternalError);
       /**
        * \internal
        * This is really the allocating function.
@@ -500,7 +500,7 @@ namespace gc
        * \warning This is also for this reason that this function has not to be inlined
        */
       void * AllocateWithTagInt(size_t Size, unsigned int Flags, unsigned long Tag)
-        throw(InvalidSize, InvalidFlags, ListCorrupted, MemoryBlockCorrupted, NoMemory, NotEnoughSpace)
+        throw(InternalError, InvalidSize, InvalidFlags, MemoryBlockCorrupted, NoMemory, NotEnoughSpace)
         __attribute__((noinline));
       /**
        * \internal
@@ -516,7 +516,7 @@ namespace gc
        * @return Entry of the block in one of the linked lists, or 0 if unfound.
        * \warning Lists lock must have been acquired before calling that method.
        */
-      MemoryBlock * FindBlock(const void * UserAddress, bool MustBeValid) const throw(TooMuchSpace, InvalidAddress, ListCorrupted);
+      MemoryBlock * FindBlock(const void * UserAddress, bool MustBeValid) const throw(InternalError, TooMuchSpace, InvalidAddress, ListCorrupted);
       /**
        * \internal
        * Free a block previously allocated using AllocateBlock().
@@ -551,7 +551,7 @@ namespace gc
        * @param IsNotExtended Optional, if to false extended size will be used
        * @return True if lock succeed, false otherwise
        */
-      bool LockBlock(void * BlockAddress, size_t BlockSize, bool IsNotExtended = false) throw(ListCorrupted);
+      bool LockBlock(void * BlockAddress, size_t BlockSize, bool IsNotExtended = false) throw(InternalError);
       /**
        * \internal
        * This function unlinks one entry in the given list.
@@ -569,7 +569,7 @@ namespace gc
        * @param IsNotExtended Optional, if to false extended size will be used
        * @return True if unlock succeed, false otherwise
        */
-      bool UnlockBlock(void * BlockAddress, size_t BlockSize, bool IsNotExtended = false) throw(ListCorrupted);
+      bool UnlockBlock(void * BlockAddress, size_t BlockSize, bool IsNotExtended = false) throw(InternalError);
       /**
        * \internal
        * Check whether the given block is marked, and if marks are still valid.
@@ -577,7 +577,7 @@ namespace gc
        * @param Size Total size of the block
        * @return True if the block is valid, false otherwise
        */
-      bool ValidateBlock(const void * BlockAddress, size_t Size) const throw(ListCorrupted);
+      bool ValidateBlock(const void * BlockAddress, size_t Size) const throw(InternalError);
 
       /**
        * \internal
@@ -737,7 +737,7 @@ namespace gc
        * @return Memory block address in case of success, 0 otherwise
        */
       void * AllocateWithTag(size_t Size, unsigned int Flags, unsigned long Tag)
-        throw(InvalidSize, InvalidFlags, ListCorrupted, MemoryBlockCorrupted, NoMemory, NotEnoughSpace);
+        throw(InternalError, InvalidSize, InvalidFlags, MemoryBlockCorrupted, NoMemory, NotEnoughSpace);
       /**
        * This function is the most complete check against corruption
        * that can be run on the garbage collector. It will check the whole
@@ -762,7 +762,7 @@ namespace gc
        * For freeing, it realises a call to Free().
        */
       void Dereference(void * Address)
-        throw(TooMuchSpace, InvalidAddress, ListCorrupted, InvalidTag, WrongFreer, MemoryBlockCorrupted);
+        throw(InternalError, TooMuchSpace, InvalidAddress, ListCorrupted, InvalidTag, WrongFreer, MemoryBlockCorrupted);
       /**
        * It frees the complete block given at the address.
        * @param Address Memory address you want to free
@@ -773,7 +773,7 @@ namespace gc
        * It just realises a call to FreeWithTag() using 0 as tag.
        */
       void Free(void * Address)
-        throw(TooMuchSpace, InvalidAddress, ListCorrupted, InvalidTag, WrongFreer, MemoryBlockCorrupted);
+        throw(InternalError, TooMuchSpace, InvalidAddress, ListCorrupted, InvalidTag, WrongFreer, MemoryBlockCorrupted);
       /**
        * It frees the complete block given at the address.
        * This function does not check if they are still references
@@ -796,7 +796,7 @@ namespace gc
        * \warning In case freeing fails an exception will be thrown.
        */
       void FreeWithTag(void * Address, unsigned long Tag)
-        throw(TooMuchSpace, InvalidAddress, ListCorrupted, InvalidTag, WrongFreer, MemoryBlockCorrupted);
+        throw(InternalError, TooMuchSpace, InvalidAddress, ListCorrupted, InvalidTag, WrongFreer, MemoryBlockCorrupted);
       /**
        * This function just returns the total allocated memory
        * by the garbage collector. As it is a counter maintained by
@@ -887,14 +887,14 @@ namespace gc
        * \warning In case of pure allocation/freeing, it may throw exceptions
        */
       void * ReallocateWithTag(void * Address, size_t Size, unsigned long Tag)
-        throw (InvalidSize, InvalidFlags, ListCorrupted, MemoryBlockCorrupted, NoMemory, NotEnoughSpace, TooMuchSpace, InvalidAddress, InvalidTag, WrongFreer);
+        throw (InternalError, InvalidSize, InvalidFlags, ListCorrupted, MemoryBlockCorrupted, NoMemory, NotEnoughSpace, TooMuchSpace, InvalidAddress, InvalidTag, WrongFreer);
       /**
        * Informs garbage collector that one more object is referencing
        * the given address.
        * @param Address Memory address you want to reference
        * @return Nothing
        */
-      void Reference(void * Address) throw(ListCorrupted);
+      void Reference(void * Address) throw(InternalError);
       /**
        * Define how many blocks the garbage collector may give you at a time.
        * If you ask for more, then, it will refuse any allocation.
