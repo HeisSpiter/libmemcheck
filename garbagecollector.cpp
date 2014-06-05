@@ -960,7 +960,26 @@ void gc::GarbageCollector::DisplayRequesterName(const MemoryBlock * Block) const
           Position = (long)Info.dli_saddr - (long)Block->pCallingAddress;
         }
 
-        std::cout << Info.dli_fname << ":" << Info.dli_sname << ((Block->pCallingAddress >= Info.dli_saddr) ? "+" : "-") << Position << "[" << Block->pCallingAddress << "]" << std::endl;
+        std::cout << std::hex;
+        std::cout << Info.dli_fname << ":" << Info.dli_sname << ((Block->pCallingAddress >= Info.dli_saddr) ? "+0x" : "-0x") << Position << "[" << Block->pCallingAddress << "]" << std::endl;
+        std::cout << std::dec;
+
+        return;
+      }
+      else if (Info.dli_fname != 0)
+      {
+        if (Block->pCallingAddress >= Info.dli_fbase)
+        {
+          Position = (long)Block->pCallingAddress - (long)Info.dli_fbase;
+        }
+        else
+        {
+          Position = (long)Info.dli_fbase - (long)Block->pCallingAddress;
+        }
+
+        std::cout << std::hex;
+        std::cout << Info.dli_fname << ((Block->pCallingAddress >= Info.dli_fbase) ? "+0x" : "-0x") << Position << "[" << Block->pCallingAddress << "]" << std::endl;
+        std::cout << std::dec;
 
         return;
       }
