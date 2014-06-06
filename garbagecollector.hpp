@@ -174,6 +174,9 @@ namespace gc
         virtual const char * what() const throw() { \
           return msg;                               \
         }                                           \
+        virtual unsigned int id() const throw() {   \
+          return Id##name;                          \
+        }                                           \
     }
 
   /**
@@ -253,6 +256,28 @@ namespace gc
       GCException() throw() { };
       virtual ~GCException() throw() { };
       virtual const char * what() const throw() = 0;
+      virtual unsigned int id() const throw() = 0;
+  };
+
+  /**
+   * \brief Garbage collector exception types
+   *
+   * TODO
+   */
+  enum IdExceptions
+  {
+    IdInvalidSize,
+    IdInvalidFlags,
+    IdNotEnoughSpace,
+    IdNoMemory,
+    IdListCorrupted,
+    IdInvalidAddress,
+    IdTooMuchSpace,
+    IdInvalidTag,
+    IdWrongFreer,
+    IdMemoryBlockCorrupted,
+    IdInternalError,
+    IdMaxException,
   };
 
   /**
