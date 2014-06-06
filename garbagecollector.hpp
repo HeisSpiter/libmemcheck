@@ -198,8 +198,8 @@ namespace gc
    * and function information. It doesn't add any EOL char.
    */
   #define GCPrintNoEndl(exp)                          \
-    std::cout << __FILE__ << ":" << __LINE__ << ": "; \
-    std::cout << __FUNCTION__ << ": " << exp
+    std::cerr << __FILE__ << ":" << __LINE__ << ": "; \
+    std::cerr << __FUNCTION__ << ": " << exp
 
   /**
    * Garbage collector assert. If the given expression
