@@ -1149,6 +1149,12 @@ void gc::GarbageCollector::FreeWithTagInt(void * Address, unsigned long Tag) thr
 
   MemoryBlock * CurrentBlock;
 
+  /* Freeing 0 is allowed & no-op */
+  if (Address == 0)
+  {
+    return;
+  }
+
   /* Lock lists */
   mListsLock.Lock();
 
