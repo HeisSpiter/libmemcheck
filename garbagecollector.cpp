@@ -231,13 +231,11 @@ void * gc::GarbageCollector::AllocateWithTagInt(size_t Size, unsigned int Flags,
   }
 #endif
 
-  /* We cannot allocate 0-sized block */
-  if (Size == 0 && !MustSucceed)
+  /* For 0-sized allocation, basically return NULL.
+   * If this matches malloc behavior, it doesn't fully matches operator new behavior
+   */
+  if (Size == 0)
   {
-    if (RaiseOnFailure)
-    {
-      throw InvalidSize();
-    }
     return 0;
   }
 
