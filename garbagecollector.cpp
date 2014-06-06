@@ -1414,7 +1414,21 @@ void gc::GarbageCollector::ReadEnvVariables(void) throw()
 {
   GCDebug("ReadEnvVariables()");
 
-  char * StrMaxSize = secure_getenv("LIBMEMCHECK_ALLOCATIONSLIMIT");
+  char * StrMaxSize = secure_getenv("LIBMEMCHECK_IGNORELIMITS");
+  if (StrMaxSize != 0)
+  {
+    long IgnoreLimits = strtol(StrMaxSize, NULL, 10);
+    if (IgnoreLimits == 1)
+    {
+      GCDebug("Will ignore all the limits");
+      SetAllocationsLimit(LIMIT_UNLIMITED);
+      SetMemoryLimit(LIMIT_UNLIMITED);
+
+      return;
+    }
+  }
+
+  StrMaxSize = secure_getenv("LIBMEMCHECK_ALLOCATIONSLIMIT");
   if (StrMaxSize != 0)
   {
     size_t MaxSize = strtoul(StrMaxSize, NULL, 10);
