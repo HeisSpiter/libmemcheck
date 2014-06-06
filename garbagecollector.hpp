@@ -194,17 +194,22 @@ namespace gc
 #endif
   /**
    * \internal
-   * Macro used for debug. Its purpose is to print given
-   * expression to standard output. It prepends file, line
+   * Macro used for printing GC errors on execution. Its purpose is to print given
+   * expression to error output. It prepends file, line
+   * and function information.
+   */
+  #define GCPrint(exp)                                    \
+    std::cerr << __FILE__ << ":" << __LINE__ << ": ";     \
+    std::cerr << __FUNCTION__ << ": " << exp << std::endl
+  /**
+   * \internal
+   * Macro used for printing GC errors on execution. Its purpose is to print given
+   * expression to error output. It prepends file, line
    * and function information. It doesn't add any EOL char.
    */
-#ifdef _DBG_
-  #define GCDebugNoEndl(exp)                          \
+  #define GCPrintNoEndl(exp)                          \
     std::cout << __FILE__ << ":" << __LINE__ << ": "; \
     std::cout << __FUNCTION__ << ": " << exp
-#else
-  #define GCDebugNoEndl(exp)
-#endif
 
   /**
    * Garbage collector assert. If the given expression

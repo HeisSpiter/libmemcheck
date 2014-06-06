@@ -74,19 +74,19 @@ gc::GarbageCollector::~GarbageCollector()
     do
     {
       MemoryBlock * NextBlock = CurrentBlock->pNextBlock;
-#ifdef _DBG_
+
       /* Only consider leaked block if non-weak */
       if (!CurrentBlock->bBlockWeak)
       {
-        GCDebug("Releasing leaked " << CurrentBlock->uBlockSize
+        GCPrint("Releasing leaked " << CurrentBlock->uBlockSize
                 << "bytes at address: " << CurrentBlock->pBlock);
-        GCDebug("It was referenced " << CurrentBlock->uiBlockReferences << " times");
-        GCDebug("Thread " << CurrentBlock->ulBlockOwner << " was owning it");
-        GCDebugNoEndl("It has been allocated at: ");
+        GCPrint("It was referenced " << CurrentBlock->uiBlockReferences << " times");
+        GCPrint("Thread " << CurrentBlock->ulBlockOwner << " was owning it");
+        GCPrintNoEndl("It has been allocated at: ");
         DisplayRequesterName(CurrentBlock);
         Size += CurrentBlock->uBlockSize;
       }
-      /* As we are in debug mode, also perform
+      /* Also perform
        * sanity checks on memory. If they fail
        * do not raise, but inform by printing a
        * message.
@@ -95,7 +95,7 @@ gc::GarbageCollector::~GarbageCollector()
       {
         GCDebug("Memory zone " << CurrentBlock->pBlock << " seems to have been corrupted, consider checking you program!");
       }
-#endif
+
       FreeBlock(CurrentBlock->pBlock, CurrentBlock->bBlockNonPageable, CurrentBlock->uBlockSize);
       FreeBlock(CurrentBlock, false, sizeof(MemoryBlock), true);
       uiAllocatedCount--;
@@ -103,9 +103,7 @@ gc::GarbageCollector::~GarbageCollector()
     } while (CurrentBlock != pmbAllocated);
   }
 
-#ifdef _DBG_
   GCDebug("Released " << Size << "bytes (32bits aligned) leaked");
-#endif
 
   /* Then, release freed blocks */
   CurrentBlock = pmbFreed;
@@ -759,7 +757,8 @@ void gc::GarbageCollector::CheckForCorruption() const throw(gc::ListCorrupted, g
             CurrentBlock->bBlockFreed == true)
         {
           GCDebug("In use entry " << CurrentBlock << " seems to be corrupted!");
-          GCDebugNoEndl("It may have been allocated at: ");
+          GCPrint("Address " << CurrentBlock->pBlock << " may be corrupted!");
+          GCPrintNoEndl("It may have been allocated at: ");
           DisplayRequesterName(CurrentBlock);
           mListsLock.Unlock();
           throw ListCorrupted();
@@ -771,8 +770,8 @@ void gc::GarbageCollector::CheckForCorruption() const throw(gc::ListCorrupted, g
         if (!ValidateBlock(CurrentBlock->pBlock, CurrentBlock->uBlockSize))
         {
           /* Not valid! */
-          GCDebug("Memory block at " << CurrentBlock->pBlock << " seems to be corrupted!");
-          GCDebugNoEndl("It may have been allocated at: ");
+          GCPrint("Memory block at " << CurrentBlock->pBlock << " seems to be corrupted!");
+          GCPrintNoEndl("It may have been allocated at: ");
           DisplayRequesterName(CurrentBlock);
           mListsLock.Unlock();
           throw MemoryBlockCorrupted();
@@ -941,7 +940,6 @@ void gc::GarbageCollector::Dereference(void * Address) throw(gc::InternalError, 
 
 void gc::GarbageCollector::DisplayRequesterName(const MemoryBlock * Block) const throw()
 {
-#ifdef _DBG_
   Dl_info Info;
   unsigned long Position;
 
@@ -960,9 +958,9 @@ void gc::GarbageCollector::DisplayRequesterName(const MemoryBlock * Block) const
           Position = (long)Info.dli_saddr - (long)Block->pCallingAddress;
         }
 
-        std::cout << std::hex;
-        std::cout << Info.dli_fname << ":" << Info.dli_sname << ((Block->pCallingAddress >= Info.dli_saddr) ? "+0x" : "-0x") << Position << "[" << Block->pCallingAddress << "]" << std::endl;
-        std::cout << std::dec;
+        std::cerr << std::hex;
+        std::cerr << Info.dli_fname << ":" << Info.dli_sname << ((Block->pCallingAddress >= Info.dli_saddr) ? "+0x" : "-0x") << Position << "[" << Block->pCallingAddress << "]" << std::endl;
+        std::cerr << std::dec;
 
         return;
       }
@@ -977,19 +975,16 @@ void gc::GarbageCollector::DisplayRequesterName(const MemoryBlock * Block) const
           Position = (long)Info.dli_fbase - (long)Block->pCallingAddress;
         }
 
-        std::cout << std::hex;
-        std::cout << Info.dli_fname << ((Block->pCallingAddress >= Info.dli_fbase) ? "+0x" : "-0x") << Position << "[" << Block->pCallingAddress << "]" << std::endl;
-        std::cout << std::dec;
+        std::cerr << std::hex;
+        std::cerr << Info.dli_fname << ((Block->pCallingAddress >= Info.dli_fbase) ? "+0x" : "-0x") << Position << "[" << Block->pCallingAddress << "]" << std::endl;
+        std::cerr << std::dec;
 
         return;
       }
     }
   }
 
-  std::cout << Block->pCallingAddress << std::endl;
-#else
-  (Block);
-#endif
+  std::cerr << Block->pCallingAddress << std::endl;
 }
 
 gc::GarbageCollector& gc::GetInstance() throw(gc::InternalError)
@@ -1154,8 +1149,8 @@ void gc::GarbageCollector::FreeWithTagInt(void * Address, unsigned long Tag) thr
 
       /* If we fall here, yes, it was, inform the user */
       GCAssert(CurrentBlock != 0);
-      GCDebug("Double-free for address " << Address);
-      GCDebugNoEndl("It has been freed at: ");
+      GCPrint("Double-free for address " << Address);
+      GCPrintNoEndl("It has been freed at: ");
       DisplayRequesterName(CurrentBlock);
     }
 
@@ -1194,8 +1189,8 @@ void gc::GarbageCollector::FreeWithTagInt(void * Address, unsigned long Tag) thr
     else
     {
         /* Only warn and keep going */
-        GCDebug("Freeing " << Address << ", which was corrupted");
-        GCDebugNoEndl("It has been allocated at: ");
+        GCPrint("Freeing " << Address << ", which was corrupted");
+        GCPrintNoEndl("It has been allocated at: ");
         DisplayRequesterName(CurrentBlock);
     }
   }
