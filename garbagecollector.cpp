@@ -1217,6 +1217,9 @@ void gc::GarbageCollector::FreeWithTagInt(void * Address, unsigned long Tag) thr
   uiAllocatedCount--;
   uiFreedCount++;
 
+  /* Set the requester of the deletion */
+  CurrentBlock->pCallingAddress = __builtin_return_address(1);
+
   /* Release lists and return */
   mListsLock.Unlock();
   return;
