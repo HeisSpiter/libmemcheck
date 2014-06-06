@@ -606,6 +606,11 @@ namespace gc
       bool LockBlock(void * BlockAddress, size_t BlockSize, bool IsNotExtended = false) throw(InternalError);
       /**
        * \internal
+       * This function tries to read parameters passed to the library through env variables
+       */
+      void ReadEnvVariables(void) throw();
+      /**
+       * \internal
        * This function unlinks one entry in the given list.
        * It can update head, if required.
        * @param ListHead Head of the list entry belongs to

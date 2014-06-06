@@ -44,6 +44,9 @@ gc::GarbageCollector::GarbageCollector() throw(gc::InternalError)
     GCDebug("Failed to get system free()");
     throw InternalError();
   }
+
+  /* Try to see if user is trying to change some settings */
+  ReadEnvVariables();
 }
 
 gc::GarbageCollector::GarbageCollector(const gc::GarbageCollector& inGC) throw()
@@ -1385,6 +1388,25 @@ gc::GarbageCollector& gc::GarbageCollector::operator=(const GarbageCollector &in
   }
 
   return *this;
+}
+
+void gc::GarbageCollector::ReadEnvVariables(void) throw()
+{
+  char * StrMaxSize = secure_getenv("LIBMEMCHECK_ALLOCATIONSLIMIT");
+  if (StrMaxSize != 0)
+  {
+    size_t MaxSize = strtoul(StrMaxSize, NULL, 10);
+    GCDebug("Overriding uListsMaxSize with env var: " << MaxSize);
+    SetAllocationsLimit(MaxSize);
+  }
+
+  StrMaxSize = secure_getenv("LIBMEMCHECK_MEMORYLIMIT");
+  if (StrMaxSize != 0)
+  {
+    unsigned long MaxSize = strtoul(StrMaxSize, NULL, 10);
+    GCDebug("Overriding ulMaxBytes with env var: " << MaxSize);
+    SetMemoryLimit(MaxSize);
+  }
 }
 
 void * gc::GarbageCollector::Reallocate(void * Address, size_t Size) throw (gc::InvalidSize, gc::InvalidFlags, gc::ListCorrupted, gc::MemoryBlockCorrupted, gc::NoMemory, gc::NotEnoughSpace, gc::TooMuchSpace, gc::InvalidAddress, gc::InvalidTag, gc::WrongFreer)
