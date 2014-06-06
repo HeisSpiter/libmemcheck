@@ -181,14 +181,6 @@ namespace gc
 
   /**
    * \internal
-   * Generic macro used to lazy-declare garbage collector
-   * exceptions. You shouldn't need it.
-   */
-  #define DeclareException(name) \
-    gc::_##name name
-
-  /**
-   * \internal
    * Macro used for debug. Its purpose is to print given
    * expression to standard output. It prepends file, line
    * and function information.
@@ -262,7 +254,7 @@ namespace gc
   /**
    * \brief Garbage collector exception types
    *
-   * TODO
+   * IDs to be used in GCException exceptions as return value for id() function
    */
   enum IdExceptions
   {

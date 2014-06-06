@@ -908,7 +908,7 @@ void gc::GarbageCollector::Dereference(void * Address) throw(gc::InternalError, 
     CurrentBlock = FindBlock(Address, true);
   }
   /* We will not throw for that */
-  catch(GCException& e)
+  catch (GCException& e)
   {
     mListsLock.Unlock();
     return;
@@ -1418,7 +1418,7 @@ void * gc::GarbageCollector::ReallocateWithTag(void * Address, size_t Size, unsi
   {
     CurrentBlock = FindBlock(Address, true);
   }
-  catch(GCException& e)
+  catch (GCException& e)
   {
     Valid = false;
   }
@@ -1429,7 +1429,7 @@ void * gc::GarbageCollector::ReallocateWithTag(void * Address, size_t Size, unsi
     CurrentBlock = FindBlock(Address, false);
   }
   /* We cannot continue without an address */
-  catch(GCException& e)
+  catch (GCException& e)
   {
     mListsLock.Unlock();
     return 0;
@@ -1638,7 +1638,7 @@ void gc::GarbageCollector::Reference(void * Address) throw(gc::InternalError)
     CurrentBlock = FindBlock(Address, true);
   }
   /* We will not throw for that */
-  catch(GCException& e)
+  catch (GCException& e)
   {
     mListsLock.Unlock();
     return;
