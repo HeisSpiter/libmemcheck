@@ -11,6 +11,7 @@ $(LIB): mutex.o garbagecollector.o
 
 %.o: %.cpp
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+#	$(CXX) -c $(CXXFLAGS) -D_DBG_ $(CPPFLAGS) $< -o $@
 
 clean:
 	rm -rf *.o

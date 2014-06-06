@@ -84,7 +84,9 @@ gc::GarbageCollector::~GarbageCollector()
         GCPrint("Thread " << CurrentBlock->ulBlockOwner << " was owning it");
         GCPrintNoEndl("It has been allocated at: ");
         DisplayRequesterName(CurrentBlock);
+#ifdef _DBG_
         Size += CurrentBlock->uBlockSize;
+#endif
       }
       /* Also perform
        * sanity checks on memory. If they fail

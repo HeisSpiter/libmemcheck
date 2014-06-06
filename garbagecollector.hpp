@@ -18,12 +18,9 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <sys/syscall.h>
+#include <iostream>
 #include <dlfcn.h>
 #include "mutex.hpp"
-#define _DBG_
-#ifdef _DBG_
-#include <iostream>
-#endif
 
 /**
  * \brief Namespace for the Garbage Collector
