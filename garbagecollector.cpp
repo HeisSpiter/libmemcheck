@@ -280,6 +280,8 @@ void * gc::GarbageCollector::AllocateWithTagInt(size_t Size, unsigned int Flags,
     if ((uiAllocatedCount * 100 / uListsMaxSize > 75) &&
         (!uiWeakCount || uiWeakCount * 100 / uiAllocatedCount < 25))
     {
+      mListsLock.Unlock();
+
       if (RaiseOnFailure)
       {
         throw NotEnoughSpace();
@@ -367,6 +369,7 @@ void * gc::GarbageCollector::AllocateWithTagInt(size_t Size, unsigned int Flags,
           /* Prepare for immediate re-use */
           if (!ValidateBlock(CurrentBlock->pBlock, CurrentBlock->uBlockSize))
           {
+            mListsLock.Unlock();
             throw MemoryBlockCorrupted();
             return 0;
           }
@@ -552,6 +555,7 @@ void * gc::GarbageCollector::AllocateWithTagInt(size_t Size, unsigned int Flags,
       LinkEntry(&pmbFreed, CurrentBlock);
       uiFreedCount++;
       uiLookasideCount++;
+      mListsLock.Unlock();
 
       if (RaiseOnFailure)
       {
@@ -671,10 +675,10 @@ void * gc::GarbageCollector::AllocateWithTagInt(size_t Size, unsigned int Flags,
         UnlinkEntry(&pmbAllocated, CurrentBlock);
       }
 
-      mListsLock.Unlock();
-
       /* Release entry */
       FreeBlock(CurrentBlock, false, sizeof(MemoryBlock), true);
+
+      mListsLock.Unlock();
 
       if (RaiseOnFailure)
       {
