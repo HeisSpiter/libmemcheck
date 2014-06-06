@@ -553,6 +553,22 @@ namespace gc
       void FreeBlock(void * BlockAddress, bool NonPaged, size_t BlockSize, bool IsNotExtended = false) throw(ListCorrupted);
       /**
        * \internal
+       * This is really the freeing function.
+       * It should always be called from wrappers not to mess up with stack
+       * Check FreeWithTag for complete documentation.
+       * @param Address Memory address you want to free
+       * @param Tag Tag used for allocating memory block. Use 0 if none.
+       * @return Nothing
+       * @see FreeWithTag()
+       * \warning To respect caller hierarchy, it's highly recommended to use it in any
+       * allocating function exposed to the user.
+       * \warning This is also for this reason that this function has not to be inlined
+       */
+      void FreeWithTagInt(void * Address, unsigned long Tag)
+        throw(InternalError, TooMuchSpace, InvalidAddress, ListCorrupted, InvalidTag, WrongFreer, MemoryBlockCorrupted)
+        __attribute__((noinline));
+      /**
+       * \internal
        * This function returns the thread ID of the calling thread.
        * @return Thread ID (casted to be platform independant)
        */
@@ -944,7 +960,12 @@ namespace gc
       friend GarbageCollector& GetInstance() throw(InternalError);
 
       friend void * ::calloc(size_t nmemb, size_t size) throw();
+      friend void ::free(void * ptr) throw();
       friend void * ::malloc(size_t size) throw();
+      friend void ::operator delete(void * ptr) throw();
+      friend void ::operator delete[](void * ptr) throw();
+      friend void ::operator delete(void * ptr, const std::nothrow_t&) throw();
+      friend void ::operator delete[](void * ptr, const std::nothrow_t&) throw();
       friend void * ::operator new(std::size_t size) throw (std::bad_alloc);
       friend void * ::operator new[](std::size_t size) throw (std::bad_alloc);
       friend void * ::operator new(std::size_t size, const std::nothrow_t&) throw();

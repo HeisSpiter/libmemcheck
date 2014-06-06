@@ -929,7 +929,7 @@ void gc::GarbageCollector::Dereference(void * Address) throw(gc::InternalError, 
   {
     /* Release lock to permit FreeWithTag to retake it */
     mListsLock.Unlock();
-    FreeWithTag(Address, CurrentBlock->ulBlockTag);
+    FreeWithTagInt(Address, CurrentBlock->ulBlockTag);
   }
   else
   {
@@ -1087,7 +1087,7 @@ gc::GarbageCollector::MemoryBlock * gc::GarbageCollector::FindBlock(const void *
 
 void gc::GarbageCollector::Free(void * Address) throw(gc::InternalError, gc::TooMuchSpace, gc::InvalidAddress, gc::ListCorrupted, gc::InvalidTag, gc::WrongFreer, gc::MemoryBlockCorrupted)
 {
-  FreeWithTag(Address, 0UL);
+  FreeWithTagInt(Address, 0UL);
 
   return;
 }
@@ -1118,6 +1118,11 @@ void gc::GarbageCollector::FreeBlock(void * BlockAddress, bool NonPaged, size_t 
 }
 
 void gc::GarbageCollector::FreeWithTag(void * Address, unsigned long Tag) throw(gc::InternalError, gc::TooMuchSpace, gc::InvalidAddress, gc::ListCorrupted, gc::InvalidTag, gc::WrongFreer, gc::MemoryBlockCorrupted)
+{
+  FreeWithTagInt(Address, Tag);
+}
+
+void gc::GarbageCollector::FreeWithTagInt(void * Address, unsigned long Tag) throw(gc::InternalError, gc::TooMuchSpace, gc::InvalidAddress, gc::ListCorrupted, gc::InvalidTag, gc::WrongFreer, gc::MemoryBlockCorrupted)
 {
   MemoryBlock * CurrentBlock;
 
@@ -1378,7 +1383,7 @@ void * gc::GarbageCollector::ReallocateWithTag(void * Address, size_t Size, unsi
   /* In case caller did not provide size, -> free */
   if (Size == 0)
   {
-    FreeWithTag(Address, Tag);
+    FreeWithTagInt(Address, Tag);
     return 0;
   }
 
@@ -1747,14 +1752,14 @@ bool gc::GarbageCollector::ValidateBlock(const void * BlockAddress, size_t Size)
  * Macro for C++ delete operator overloads
  * It is a simple wrapper to Free() method.
  */
-#define OP_DELETE_NO_THROW       \
-  try                            \
-  {                              \
-    gc::GetInstance().Free(ptr); \
-  }                              \
-  catch (gc::GCException& e)     \
-  {                              \
-    return;                      \
+#define OP_DELETE_NO_THROW                      \
+  try                                           \
+  {                                             \
+    gc::GetInstance().FreeWithTagInt(ptr, 0UL); \
+  }                                             \
+  catch (gc::GCException& e)                    \
+  {                                             \
+    return;                                     \
   }
 
 void operator delete(void * ptr) throw()
@@ -1851,7 +1856,7 @@ void free(void * ptr) throw()
   /* Simple wrapper */
   try
   {
-    gc::GetInstance().Free(ptr);
+    gc::GetInstance().FreeWithTagInt(ptr, 0UL);
   }
   catch (gc::GCException& e)
   {
