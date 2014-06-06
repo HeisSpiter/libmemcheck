@@ -1137,8 +1137,28 @@ void gc::GarbageCollector::FreeWithTagInt(void * Address, unsigned long Tag) thr
     CurrentBlock = FindBlock(Address, true);
   }
   /* Ensure lock is released before throwing */
-  catch(GCException& e)
+  catch (GCException& e)
   {
+    /* Not found - has it been already freed? */
+    if (e.id() == IdTooMuchSpace || e.id() == IdInvalidAddress)
+    {
+      try
+      {
+        CurrentBlock = FindBlock(Address, false);
+      }
+      catch (GCException& e)
+      {
+        mListsLock.Unlock();
+        throw;
+      }
+
+      /* If we fall here, yes, it was, inform the user */
+      GCAssert(CurrentBlock != 0);
+      GCDebug("Double-free for address " << Address);
+      GCDebugNoEndl("It has been freed at: ");
+      DisplayRequesterName(CurrentBlock);
+    }
+
     mListsLock.Unlock();
     throw;
   }
