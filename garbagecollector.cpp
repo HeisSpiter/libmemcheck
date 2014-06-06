@@ -9,6 +9,13 @@
  */
 
 #include "garbagecollector.hpp"
+#include <cstring>
+#include <exception>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <sys/syscall.h>
+#include <iostream>
+#include <dlfcn.h>
 
 gc::GarbageCollector::GarbageCollector() throw(gc::InternalError)
 {

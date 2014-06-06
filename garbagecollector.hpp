@@ -12,14 +12,7 @@
  */
 
 #include <new>
-#include <cstring>
-#include <exception>
 #include <cstdlib>
-#include <sys/mman.h>
-#include <unistd.h>
-#include <sys/syscall.h>
-#include <iostream>
-#include <dlfcn.h>
 #include "mutex.hpp"
 
 /**
