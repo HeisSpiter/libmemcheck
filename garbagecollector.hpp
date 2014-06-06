@@ -468,17 +468,6 @@ namespace gc
 
       /**
        * \internal
-       * Pointer to the system malloc syscall
-       */
-      void * (* pSystemMalloc)(size_t);
-      /**
-       * \internal
-       * Pointer to the system malloc syscall
-       */
-      void (* pSystemFree)(void *);
-
-      /**
-       * \internal
        * Garbage Collector constructor.
        *
        * It just allocates internal linked lists and initiate them. It also

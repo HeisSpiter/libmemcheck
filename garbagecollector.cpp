@@ -19,6 +19,8 @@
 
 gc::GarbageCollector::GarbageCollector() throw(gc::InternalError)
 {
+  GCDebug("GarbageCollector()");
+
   /* Initialize attributes */
   SetAllocationsLimit();
   SetMemoryLimit();
@@ -30,27 +32,14 @@ gc::GarbageCollector::GarbageCollector() throw(gc::InternalError)
   pmbFreed = 0;
   ulTotalAllocated = 0;
 
-  /* Get system malloc */
-  pSystemMalloc = (void * (*)(size_t))dlsym(RTLD_NEXT, "malloc");
-  if (pSystemMalloc == 0)
-  {
-    GCDebug("Failed to get system malloc()");
-    throw InternalError();
-  }
-
-  pSystemFree = (void (*)(void *))dlsym(RTLD_NEXT, "free");
-  if (pSystemFree == 0)
-  {
-    GCDebug("Failed to get system free()");
-    throw InternalError();
-  }
-
   /* Try to see if user is trying to change some settings */
   ReadEnvVariables();
 }
 
 gc::GarbageCollector::GarbageCollector(const gc::GarbageCollector& inGC) throw()
 {
+  GCDebug("GarbageCollector()");
+
   /* Copy state */
   uListsMaxSize = inGC.uListsMaxSize;
   uiAllocatedCount = inGC.uiAllocatedCount;
@@ -61,16 +50,15 @@ gc::GarbageCollector::GarbageCollector(const gc::GarbageCollector& inGC) throw()
   pmbFreed = inGC.pmbFreed;
   ulTotalAllocated = inGC.ulTotalAllocated;
   ulMaxBytes = inGC.ulMaxBytes;
-  pSystemMalloc = inGC.pSystemMalloc;
-  pSystemFree = inGC.pSystemFree;
 }
 
 gc::GarbageCollector::~GarbageCollector()
 {
+  GCDebug("~GarbageCollector()");
+
 #ifdef _DBG_
   unsigned int Size = 0;
 #endif
-  GCDebug("Garbadge collector destruction initiated");
 
   /* Acquire lists lock */
   mListsLock.Lock();
@@ -145,11 +133,15 @@ gc::GarbageCollector::~GarbageCollector()
 
 void * gc::GarbageCollector::Allocate(size_t Size, unsigned int Flags) throw(gc::InvalidSize, gc::InvalidFlags, gc::ListCorrupted, gc::MemoryBlockCorrupted, gc::NoMemory, gc::NotEnoughSpace)
 {
+  GCDebug("Allocate(" << Size << ", " << Flags << ")");
+
   return AllocateWithTagInt(Size, Flags, 0UL);
 }
 
 void * gc::GarbageCollector::AllocateBlock(size_t Size, bool NonPageable, bool ZeroBlock, bool NotExtended, bool MustSucceed) throw(gc::InternalError)
 {
+  GCDebug("AllocateBlock(" << Size << ", " << NonPageable << ", " << ZeroBlock << ", " << NotExtended << ", " << MustSucceed << ")");
+
   void * MemoryBlock;
   size_t AllocateSize;
 
@@ -172,7 +164,7 @@ void * gc::GarbageCollector::AllocateBlock(size_t Size, bool NonPageable, bool Z
   }
 
   /* Try to allocate memory */
-  MemoryBlock = pSystemMalloc(AllocateSize);
+  MemoryBlock = mmap(0, AllocateSize, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
   /* If we have memory block */
   if (MemoryBlock != 0)
   {
@@ -213,11 +205,15 @@ void * gc::GarbageCollector::AllocateBlock(size_t Size, bool NonPageable, bool Z
 
 void * gc::GarbageCollector::AllocateWithTag(size_t Size, unsigned int Flags, unsigned long Tag) throw(gc::InternalError, gc::InvalidSize, gc::InvalidFlags, gc::MemoryBlockCorrupted, gc::NoMemory, gc::NotEnoughSpace)
 {
-    return AllocateWithTagInt(Size, Flags, Tag);
+  GCDebug("AllocateWithTag(" << Size << ", " << Flags << ", " << Tag << ")");
+
+  return AllocateWithTagInt(Size, Flags, Tag);
 }
 
 void * gc::GarbageCollector::AllocateWithTagInt(size_t Size, unsigned int Flags, unsigned long Tag) throw(gc::InternalError, gc::InvalidSize, gc::InvalidFlags, gc::MemoryBlockCorrupted, gc::NoMemory, gc::NotEnoughSpace)
 {
+  GCDebug("AllocateWithTagInt(" << Size << ", " << Flags << ", " << Tag << ")");
+
   void * Block;
   unsigned int k;
   size_t RealSize;
@@ -227,8 +223,6 @@ void * gc::GarbageCollector::AllocateWithTagInt(size_t Size, unsigned int Flags,
   bool RaiseOnFailure = IsFlagOn(Flags, RAISE_ON_FAILURE);
   bool NonPaged = IsFlagOn(Flags, NON_PAGED_BLOCK);
   bool MustSucceed = IsFlagOn(Flags, MUST_SUCCEED);
-
-  GCDebug("Request for " << Size << "B with flags " << Flags << " and tag " << Tag);
 
 #ifdef _DBG_
   if (MustSucceed)
@@ -748,6 +742,8 @@ void * gc::GarbageCollector::AllocateWithTagInt(size_t Size, unsigned int Flags,
 
 void gc::GarbageCollector::CheckForCorruption() const throw(gc::ListCorrupted, gc::MemoryBlockCorrupted)
 {
+  GCDebug("CheckForCorruption()");
+
   unsigned long TotalMemory = 0;
   unsigned int TotalEntries = 0, WeakEntries = 0, LookasideEntries = 0;
 
@@ -908,6 +904,8 @@ void gc::GarbageCollector::CheckForCorruption() const throw(gc::ListCorrupted, g
 
 void gc::GarbageCollector::Dereference(void * Address) throw(gc::InternalError, gc::TooMuchSpace, gc::InvalidAddress, gc::ListCorrupted, gc::InvalidTag, gc::WrongFreer, gc::MemoryBlockCorrupted)
 {
+  GCDebug("Dereference(" << Address << ")");
+
   MemoryBlock * CurrentBlock;
 
   /* Lock lists */
@@ -952,6 +950,8 @@ void gc::GarbageCollector::Dereference(void * Address) throw(gc::InternalError, 
 
 void gc::GarbageCollector::DisplayRequesterName(const MemoryBlock * Block) const throw()
 {
+  GCDebug("DisplayRequesterName(" << Block << ")");
+
   Dl_info Info;
   unsigned long Position;
 
@@ -1001,12 +1001,16 @@ void gc::GarbageCollector::DisplayRequesterName(const MemoryBlock * Block) const
 
 gc::GarbageCollector& gc::GetInstance() throw(gc::InternalError)
 {
+  GCDebug("GetInstance()");
+
   static GarbageCollector Instance;
   return Instance;
 }
 
 gc::GarbageCollector::MemoryBlock * gc::GarbageCollector::FindBlock(const void * UserAddress, bool MustBeValid) const throw(gc::InternalError, gc::TooMuchSpace, gc::InvalidAddress, gc::ListCorrupted)
 {
+  GCDebug("FindBlock(" << UserAddress << ", " << MustBeValid << ")");
+
   MemoryBlock * CurrentBlock;
   void * RealAddress;
 
@@ -1094,6 +1098,8 @@ gc::GarbageCollector::MemoryBlock * gc::GarbageCollector::FindBlock(const void *
 
 void gc::GarbageCollector::Free(void * Address) throw(gc::InternalError, gc::TooMuchSpace, gc::InvalidAddress, gc::ListCorrupted, gc::InvalidTag, gc::WrongFreer, gc::MemoryBlockCorrupted)
 {
+  GCDebug("Free(" << Address << ")");
+
   FreeWithTagInt(Address, 0UL);
 
   return;
@@ -1101,6 +1107,8 @@ void gc::GarbageCollector::Free(void * Address) throw(gc::InternalError, gc::Too
 
 void gc::GarbageCollector::FreeBlock(void * BlockAddress, bool NonPaged, size_t BlockSize, bool IsNotExtended) throw(gc::ListCorrupted)
 {
+  GCDebug("FreeBlock(" << BlockAddress << ", " << NonPaged << ", " << BlockSize << ", " << IsNotExtended << ")");
+
   /* Passed that point, address must be valid */
   GCAssert(BlockAddress != 0);
 
@@ -1116,7 +1124,7 @@ void gc::GarbageCollector::FreeBlock(void * BlockAddress, bool NonPaged, size_t 
     (void)UnlockBlock(BlockAddress, AllocatedSize, true);
   }
 
-  pSystemFree(BlockAddress);
+  munmap(BlockAddress, AllocatedSize);
 
   /* Now, decrease total allocated */
   ulTotalAllocated -= AllocatedSize;
@@ -1126,14 +1134,16 @@ void gc::GarbageCollector::FreeBlock(void * BlockAddress, bool NonPaged, size_t 
 
 void gc::GarbageCollector::FreeWithTag(void * Address, unsigned long Tag) throw(gc::InternalError, gc::TooMuchSpace, gc::InvalidAddress, gc::ListCorrupted, gc::InvalidTag, gc::WrongFreer, gc::MemoryBlockCorrupted)
 {
+  GCDebug("FreeWithTag(" << Address << ", " << Tag << ")");
+
   FreeWithTagInt(Address, Tag);
 }
 
 void gc::GarbageCollector::FreeWithTagInt(void * Address, unsigned long Tag) throw(gc::InternalError, gc::TooMuchSpace, gc::InvalidAddress, gc::ListCorrupted, gc::InvalidTag, gc::WrongFreer, gc::MemoryBlockCorrupted)
 {
-  MemoryBlock * CurrentBlock;
+  GCDebug("FreeWithTagInt(" << Address << ", " << Tag << ")");
 
-  GCDebug("Free for address " << Address << " requested");
+  MemoryBlock * CurrentBlock;
 
   /* Lock lists */
   mListsLock.Lock();
@@ -1254,17 +1264,23 @@ void gc::GarbageCollector::FreeWithTagInt(void * Address, unsigned long Tag) thr
 
 unsigned long gc::GarbageCollector::GetThreadID() const throw()
 {
+  GCDebug("GetThreadID()");
+
   /* It is not exported by GLibc */
   return (unsigned long)syscall(SYS_gettid);
 }
 
 unsigned long gc::GarbageCollector::GetTotalAllocated() const throw()
 {
+  GCDebug("GetTotalAllocated()");
+
   return ulTotalAllocated;
 }
 
 bool gc::GarbageCollector::IsAddressValid(const void * Address, bool IsInBlock) const throw()
 {
+  GCDebug("IsAddressValid(" << Address << ", " << IsInBlock << ")");
+
   /* Lock lists */
   mListsLock.Lock();
 
@@ -1322,6 +1338,8 @@ bool gc::GarbageCollector::IsAddressValid(const void * Address, bool IsInBlock) 
 
 void gc::GarbageCollector::LinkEntry(MemoryBlock ** ListHead, MemoryBlock * Entry) throw()
 {
+  GCDebug("LinkEntry(" << ListHead << ", " << Entry << ")");
+
   if (*ListHead != 0)
   {
     Entry->pNextBlock = *ListHead;
@@ -1341,6 +1359,8 @@ void gc::GarbageCollector::LinkEntry(MemoryBlock ** ListHead, MemoryBlock * Entr
 
 bool gc::GarbageCollector::LockBlock(void * BlockAddress, size_t BlockSize, bool IsNotExtended) throw(gc::InternalError)
 {
+  GCDebug("LockBlock(" << BlockAddress << ", " << BlockSize << ", " << IsNotExtended << ")");
+
   size_t AllocateSize;
 
   /* Passed that point, address must be valid */
@@ -1362,6 +1382,8 @@ bool gc::GarbageCollector::LockBlock(void * BlockAddress, size_t BlockSize, bool
 
 gc::GarbageCollector& gc::GarbageCollector::operator=(const GarbageCollector &inGC) throw(gc::ListCorrupted, gc::MemoryBlockCorrupted)
 {
+  GCDebug("operator=()");
+
   if (this != &inGC)
   {
     /* We first check integrity of old GC
@@ -1383,8 +1405,6 @@ gc::GarbageCollector& gc::GarbageCollector::operator=(const GarbageCollector &in
     pmbFreed = inGC.pmbFreed;
     ulTotalAllocated = inGC.ulTotalAllocated;
     ulMaxBytes = inGC.ulMaxBytes;
-    pSystemMalloc = inGC.pSystemMalloc;
-    pSystemFree = inGC.pSystemFree;
   }
 
   return *this;
@@ -1392,6 +1412,8 @@ gc::GarbageCollector& gc::GarbageCollector::operator=(const GarbageCollector &in
 
 void gc::GarbageCollector::ReadEnvVariables(void) throw()
 {
+  GCDebug("ReadEnvVariables()");
+
   char * StrMaxSize = secure_getenv("LIBMEMCHECK_ALLOCATIONSLIMIT");
   if (StrMaxSize != 0)
   {
@@ -1411,17 +1433,19 @@ void gc::GarbageCollector::ReadEnvVariables(void) throw()
 
 void * gc::GarbageCollector::Reallocate(void * Address, size_t Size) throw (gc::InvalidSize, gc::InvalidFlags, gc::ListCorrupted, gc::MemoryBlockCorrupted, gc::NoMemory, gc::NotEnoughSpace, gc::TooMuchSpace, gc::InvalidAddress, gc::InvalidTag, gc::WrongFreer)
 {
+  GCDebug("Reallocate(" << Address << ", " << Size << ")");
+
   return ReallocateWithTag(Address, Size, 0UL);
 }
 
 void * gc::GarbageCollector::ReallocateWithTag(void * Address, size_t Size, unsigned long Tag) throw (gc::InternalError, gc::InvalidSize, gc::InvalidFlags, gc::ListCorrupted, gc::MemoryBlockCorrupted, gc::NoMemory, gc::NotEnoughSpace, gc::TooMuchSpace, gc::InvalidAddress, gc::InvalidTag, gc::WrongFreer)
 {
+  GCDebug("ReallocateWithTag(" << Address << ", " << Size << ", " << Tag << ")");
+
   void * Block;
   size_t RealSize;
   bool Valid = true;
   MemoryBlock * CurrentBlock;
-
-  GCDebug("Reallocate for address " << Address << " requested");
 
   /* In case caller is passing null address, -> allocate */
   if (Address == 0)
@@ -1653,6 +1677,8 @@ void * gc::GarbageCollector::ReallocateWithTag(void * Address, size_t Size, unsi
 
 void gc::GarbageCollector::Reference(void * Address) throw(gc::InternalError)
 {
+  GCDebug("Reference(" << Address << ")");
+
   MemoryBlock * CurrentBlock;
 
   /* Lock lists */
@@ -1684,6 +1710,8 @@ void gc::GarbageCollector::Reference(void * Address) throw(gc::InternalError)
 
 bool gc::GarbageCollector::SetAllocationsLimit(size_t MaxSize) throw()
 {
+  GCDebug("SetAllocationsLimit(" << MaxSize << ")");
+
   /* Refuse 0 */
   if (MaxSize == 0)
   {
@@ -1721,6 +1749,8 @@ bool gc::GarbageCollector::SetAllocationsLimit(size_t MaxSize) throw()
 
 bool gc::GarbageCollector::SetMemoryLimit(unsigned long MaxSize) throw()
 {
+  GCDebug("SetMemoryLimit(" << MaxSize << ")");
+
   register bool Result = false;
 
   /* Refuse 0 */
@@ -1745,6 +1775,8 @@ bool gc::GarbageCollector::SetMemoryLimit(unsigned long MaxSize) throw()
 
 void gc::GarbageCollector::UnlinkEntry(MemoryBlock ** ListHead, MemoryBlock * Entry) throw()
 {
+  GCDebug("UnlinkEntry(" << ListHead << ", " << Entry << ")");
+
   Entry->pNextBlock->pPrevBlock = Entry->pPrevBlock;
   Entry->pPrevBlock->pNextBlock = Entry->pNextBlock;
   if (Entry == *ListHead)
@@ -1761,6 +1793,8 @@ void gc::GarbageCollector::UnlinkEntry(MemoryBlock ** ListHead, MemoryBlock * En
 
 bool gc::GarbageCollector::UnlockBlock(void * BlockAddress, size_t BlockSize, bool IsNotExtended) throw(gc::InternalError)
 {
+  GCDebug("UnlockBlock(" << BlockAddress << ", " << BlockSize << ", " << IsNotExtended << ")");
+
   size_t AllocateSize;
 
   /* Passed that point, address must be valid */
@@ -1782,6 +1816,8 @@ bool gc::GarbageCollector::UnlockBlock(void * BlockAddress, size_t BlockSize, bo
 
 bool gc::GarbageCollector::ValidateBlock(const void * BlockAddress, size_t Size) const throw(gc::InternalError)
 {
+  GCDebug("ValidateBlock(" << BlockAddress << ", " << Size << ")");
+
   /* Passed that point, address must be valid */
   GCAssert(BlockAddress != 0);
 
@@ -1813,21 +1849,25 @@ bool gc::GarbageCollector::ValidateBlock(const void * BlockAddress, size_t Size)
 
 void operator delete(void * ptr) throw()
 {
+  GCDebug("operator delete(" << ptr << ")");
   OP_DELETE_NO_THROW;
 }
 
 void operator delete[](void * ptr) throw()
 {
+  GCDebug("operator delete[](" << ptr << ")");
   OP_DELETE_NO_THROW;
 }
 
 void operator delete(void * ptr, const std::nothrow_t&) throw()
 {
+  GCDebug("operator delete(" << ptr << ")");
   OP_DELETE_NO_THROW;
 }
 
 void operator delete[](void * ptr, const std::nothrow_t&) throw()
 {
+  GCDebug("operator delete[](" << ptr << ")");
   OP_DELETE_NO_THROW;
 }
 
@@ -1867,26 +1907,32 @@ void operator delete[](void * ptr, const std::nothrow_t&) throw()
 
 void * operator new(std::size_t size) throw (std::bad_alloc)
 {
+  GCDebug("operator new(" << size << ")");
   OP_NEW_THROW;
 }
 
 void * operator new[](std::size_t size) throw (std::bad_alloc)
 {
+  GCDebug("operator new[](" << size << ")");
   OP_NEW_THROW;
 }
 
 void * operator new(std::size_t size, const std::nothrow_t&) throw()
 {
+  GCDebug("operator new(" << size << ")");
   OP_NEW_NO_THROW;
 }
 
 void * operator new[](std::size_t size, const std::nothrow_t&) throw()
 {
+  GCDebug("operator new[](" << size << ")");
   OP_NEW_NO_THROW;
 }
 
 void * calloc(size_t nmemb, size_t size) throw()
 {
+  GCDebug("calloc(" << nmemb << ", " << size << ")");
+
   /* Simple wrapper */
   try
   {
@@ -1902,6 +1948,8 @@ void * calloc(size_t nmemb, size_t size) throw()
 
 void free(void * ptr) throw()
 {
+  GCDebug("free(" << ptr << ")");
+
   /* Simple wrapper */
   try
   {
@@ -1915,6 +1963,8 @@ void free(void * ptr) throw()
 
 void * malloc(size_t size) throw()
 {
+  GCDebug("malloc(" << size << ")");
+
   /* Simple wrapper */
   try
   {
@@ -1930,6 +1980,8 @@ void * malloc(size_t size) throw()
 
 void * realloc(void * ptr, size_t size) throw()
 {
+  GCDebug("realloc(" << ptr << ", " << size << ")");
+
   /* Simple wrapper */
   try
   {
