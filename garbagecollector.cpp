@@ -964,12 +964,13 @@ void gc::GarbageCollector::DisplayRequesterName(const MemoryBlock * Block) const
 
 #ifndef _UNWIND_
   Dl_info Info;
-  unsigned long Position;
 
   if (Block->pCallingAddress != 0)
   {
     if (dladdr(Block->pCallingAddress, &Info) != 0)
     {
+      unsigned long Position;
+
       if (Info.dli_fname != 0 && Info.dli_sname != 0)
       {
         if (Block->pCallingAddress >= Info.dli_saddr)
