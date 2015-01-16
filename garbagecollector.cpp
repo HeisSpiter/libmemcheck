@@ -529,7 +529,7 @@ void * gc::GarbageCollector::AllocateWithTagInt(size_t Size, unsigned int Flags,
     else
     {
       /* If we are not using old entry, then allocate */
-      CurrentBlock = (MemoryBlock *)AllocateBlock(sizeof(MemoryBlock), false, true, true);
+      CurrentBlock = static_cast<MemoryBlock *>(AllocateBlock(sizeof(MemoryBlock), false, true, true));
       if (CurrentBlock == 0)
       {
         mListsLock.Unlock();
