@@ -16,6 +16,10 @@
 #include <sys/syscall.h>
 #include <iostream>
 #include <dlfcn.h>
+#ifdef _UNWIND_
+#include <libunwind.h>
+#include <execinfo.h>
+#endif
 
 gc::GarbageCollector::GarbageCollector() throw(gc::InternalError)
 {
@@ -525,7 +529,7 @@ void * gc::GarbageCollector::AllocateWithTagInt(size_t Size, unsigned int Flags,
     else
     {
       /* If we are not using old entry, then allocate */
-      CurrentBlock = static_cast<MemoryBlock *>(AllocateBlock(sizeof(MemoryBlock), false, true, true));
+      CurrentBlock = (MemoryBlock *)AllocateBlock(sizeof(MemoryBlock), false, true, true);
       if (CurrentBlock == 0)
       {
         mListsLock.Unlock();
@@ -724,7 +728,11 @@ void * gc::GarbageCollector::AllocateWithTagInt(size_t Size, unsigned int Flags,
   /* Who's the requester?
    * We use 1 here, because 0 is a function of our library
    */
+  #ifndef _UNWIND_
   CurrentBlock->pCallingAddress = __builtin_return_address(1);
+  #else
+  CurrentBlock->uBackTraceSize = unw_backtrace(CurrentBlock->pCallingBackTrace, BACKTRACE_SIZE);
+  #endif
 
   /* If required, insert entry in list */
   if (CurrentBlock->pNextBlock == 0)
@@ -954,14 +962,14 @@ void gc::GarbageCollector::DisplayRequesterName(const MemoryBlock * Block) const
 {
   GCDebug("DisplayRequesterName(" << Block << ")");
 
+#ifndef _UNWIND_
+  Dl_info Info;
+  unsigned long Position;
+
   if (Block->pCallingAddress != 0)
   {
-    Dl_info Info;
-
     if (dladdr(Block->pCallingAddress, &Info) != 0)
     {
-      unsigned long Position;
-
       if (Info.dli_fname != 0 && Info.dli_sname != 0)
       {
         if (Block->pCallingAddress >= Info.dli_saddr)
@@ -1000,6 +1008,27 @@ void gc::GarbageCollector::DisplayRequesterName(const MemoryBlock * Block) const
   }
 
   std::cerr << Block->pCallingAddress << std::endl;
+#else
+  if (Block->uBackTraceSize != 0)
+  {
+    char ** Symbols;
+    Symbols = backtrace_symbols(Block->pCallingBackTrace, Block->uBackTraceSize);
+
+    std::cerr << std::endl;
+    for (size_t i = 0; i < Block->uBackTraceSize; ++i)
+    {
+      if (Block->pCallingBackTrace[i] == 0)
+        continue;
+
+      if (Symbols != 0)
+        std::cerr << i << ": " << Symbols[i] << std::endl;
+      else
+        std::cerr << i << ": " << Block->pCallingBackTrace[i] << std::endl;
+    }
+
+    free(Symbols);
+  }
+#endif
 }
 
 gc::GarbageCollector& gc::GetInstance() throw(gc::InternalError)
@@ -1264,7 +1293,11 @@ void gc::GarbageCollector::FreeWithTagInt(void * Address, unsigned long Tag) thr
   uiFreedCount++;
 
   /* Set the requester of the deletion */
+  #ifndef _UNWIND_
   CurrentBlock->pCallingAddress = __builtin_return_address(1);
+  #else
+  CurrentBlock->uBlockSize = unw_backtrace(CurrentBlock->pCallingBackTrace, BACKTRACE_SIZE);
+  #endif
 
   /* Release lists and return */
   mListsLock.Unlock();

@@ -35,6 +35,13 @@ namespace gc
    */
   #define INIT_MEM_SIZE (unsigned long)0x800
 
+  #ifdef _UNWIND_
+  /**
+   * Maximal size of the backtrace we keep
+   */
+  #define BACKTRACE_SIZE 0xa
+  #endif
+
   /**
    * Used to define no limitation for allocations/memory.
    */
@@ -406,7 +413,12 @@ namespace gc
         unsigned long ulBlockOwner; /**< ID of the thread owner. 0 if lock is unused */
         bool bBlockFreed; /**< Set to true if block is freed */
         bool bBlockLookaside; /**< Set to true if block is lookaside */
+        #ifndef _UNWIND_
         void * pCallingAddress; /**< Address in binary where the allocation has been requested */
+        #else
+        void * pCallingBackTrace[BACKTRACE_SIZE];
+        size_t uBackTraceSize;
+        #endif
         struct MemoryBlock * pNextBlock; /**< Pointer to the next block */
         struct MemoryBlock * pPrevBlock; /**< Pointer to the previous block */
       };
