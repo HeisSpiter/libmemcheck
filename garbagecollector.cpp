@@ -35,6 +35,7 @@ gc::GarbageCollector::GarbageCollector() throw(gc::InternalError)
   pmbAllocated = 0;
   pmbFreed = 0;
   ulTotalAllocated = 0;
+  bMarkMemory = false;
 
   /* Try to see if user is trying to change some settings */
   ReadEnvVariables();
@@ -54,6 +55,7 @@ gc::GarbageCollector::GarbageCollector(const gc::GarbageCollector& inGC) throw()
   pmbFreed = inGC.pmbFreed;
   ulTotalAllocated = inGC.ulTotalAllocated;
   ulMaxBytes = inGC.ulMaxBytes;
+  bMarkMemory = inGC.bMarkMemory;
 }
 
 gc::GarbageCollector::~GarbageCollector()
@@ -1379,6 +1381,11 @@ bool gc::GarbageCollector::IsAddressValid(const void * Address, bool IsInBlock) 
   return false;
 }
 
+bool gc::GarbageCollector::IsMarkedByDefault() const throw()
+{
+  return bMarkMemory;
+}
+
 void gc::GarbageCollector::LinkEntry(MemoryBlock ** ListHead, MemoryBlock * Entry) throw()
 {
   GCDebug("LinkEntry(" << ListHead << ", " << Entry << ")");
@@ -1467,7 +1474,7 @@ void gc::GarbageCollector::ReadEnvVariables(void) throw()
       SetAllocationsLimit(LIMIT_UNLIMITED);
       SetMemoryLimit(LIMIT_UNLIMITED);
 
-      return;
+      goto SkipLimits;
     }
   }
 
@@ -1485,6 +1492,18 @@ void gc::GarbageCollector::ReadEnvVariables(void) throw()
     unsigned long MaxSize = strtoul(StrMaxSize, NULL, 10);
     GCDebug("Overriding ulMaxBytes with env var: " << MaxSize);
     SetMemoryLimit(MaxSize);
+  }
+
+SkipLimits:
+  StrMaxSize = secure_getenv("LIBMEMCHECK_MARKMEMORY");
+  if (StrMaxSize != 0)
+  {
+    long MarkMemory = strtol(StrMaxSize, NULL, 10);
+    if (MarkMemory == 1)
+    {
+      GCDebug("Will mark all the memory allocated through wrappers");
+      bMarkMemory = true;
+    }
   }
 }
 
@@ -1930,19 +1949,29 @@ void operator delete[](void * ptr, const std::nothrow_t&) throw()
 
 /**
  * \internal
+ * Macro for C++ new operator overloads.
+ * It just prepares flags.
+ */
+#define OP_NEW_FLAGS                                                                     \
+  unsigned int Flags = PAGED_BLOCK | RAISE_ON_FAILURE | DO_NOT_RAISE_IF_CORRUPT_ON_FREE; \
+  if (gc::GetInstance().IsMarkedByDefault())                                             \
+    Flags |= MARKED_BLOCK
+
+/**
+ * \internal
  * Macro for C++ new operator overloads that throw exception.
  * It is a simple wrapper to Allocate() method.
  */
-#define OP_NEW_THROW                                                                                              \
-  try                                                                                                             \
-  {                                                                                                               \
-    return gc::GetInstance().AllocateWithTagInt(size,                                                             \
-                                                PAGED_BLOCK | RAISE_ON_FAILURE | DO_NOT_RAISE_IF_CORRUPT_ON_FREE, \
-                                                0UL);                                                             \
-  }                                                                                                               \
-  catch (gc::GCException& e)                                                                                      \
-  {                                                                                                               \
-    throw std::bad_alloc();                                                                                       \
+#define OP_NEW_THROW                                   \
+  try                                                  \
+  {                                                    \
+    return gc::GetInstance().AllocateWithTagInt(size,  \
+                                                Flags, \
+                                                0UL);  \
+  }                                                    \
+  catch (gc::GCException& e)                           \
+  {                                                    \
+    throw std::bad_alloc();                            \
   }
 
 /**
@@ -1950,39 +1979,43 @@ void operator delete[](void * ptr, const std::nothrow_t&) throw()
  * Macro for C++ new operator overloads that do not throw exception.
  * It is a simple wrapper to Allocate() method.
  */
-#define OP_NEW_NO_THROW                                                                                           \
-  try                                                                                                             \
-  {                                                                                                               \
-    return gc::GetInstance().AllocateWithTagInt(size,                                                             \
-                                                PAGED_BLOCK | RAISE_ON_FAILURE | DO_NOT_RAISE_IF_CORRUPT_ON_FREE, \
-                                                0UL);                                                             \
-  }                                                                                                               \
-  catch (gc::GCException& e)                                                                                      \
-  {                                                                                                               \
-    return 0;                                                                                                     \
+#define OP_NEW_NO_THROW                                \
+  try                                                  \
+  {                                                    \
+    return gc::GetInstance().AllocateWithTagInt(size,  \
+                                                Flags, \
+                                                0UL);  \
+  }                                                    \
+  catch (gc::GCException& e)                           \
+  {                                                    \
+    return 0;                                          \
   }
 
 void * operator new(std::size_t size) throw (std::bad_alloc)
 {
   GCDebug("operator new(" << size << ")");
+  OP_NEW_FLAGS;
   OP_NEW_THROW;
 }
 
 void * operator new[](std::size_t size) throw (std::bad_alloc)
 {
   GCDebug("operator new[](" << size << ")");
+  OP_NEW_FLAGS;
   OP_NEW_THROW;
 }
 
 void * operator new(std::size_t size, const std::nothrow_t&) throw()
 {
   GCDebug("operator new(" << size << ")");
+  OP_NEW_FLAGS;
   OP_NEW_NO_THROW;
 }
 
 void * operator new[](std::size_t size, const std::nothrow_t&) throw()
 {
   GCDebug("operator new[](" << size << ")");
+  OP_NEW_FLAGS;
   OP_NEW_NO_THROW;
 }
 
@@ -2025,9 +2058,12 @@ void * malloc(size_t size) throw()
   /* Simple wrapper */
   try
   {
-    return gc::GetInstance().AllocateWithTagInt(size,
-                                                PAGED_BLOCK | RAISE_ON_FAILURE | DO_NOT_RAISE_IF_CORRUPT_ON_FREE,
-                                                0UL);
+    unsigned int Flags = PAGED_BLOCK | RAISE_ON_FAILURE | DO_NOT_RAISE_IF_CORRUPT_ON_FREE;
+
+    if (gc::GetInstance().IsMarkedByDefault())
+      Flags |= MARKED_BLOCK;
+
+    return gc::GetInstance().AllocateWithTagInt(size, Flags, 0UL);
   }
   catch (gc::GCException& e)
   {

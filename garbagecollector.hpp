@@ -477,6 +477,11 @@ namespace gc
        * Limit for memory allocation in bytes. It is counted in bytes.
        */
       unsigned long ulMaxBytes;
+      /**
+       * \internal
+       * Set to true if memory must be marked when allocating through wrappers.
+       */
+      bool bMarkMemory;
 
       /**
        * \internal
@@ -882,6 +887,11 @@ namespace gc
        * @return True if the address is valid
        */
       bool IsAddressValid(const void * Address, bool IsInBlock) const throw();
+      /**
+       * Returns whether allocations are marked by default.
+       * @return True if marked by default
+       */
+      bool IsMarkedByDefault() const throw();
       /**
        * It reallocates a block of memory to the new size
        * @param Address Memory address to reallocate
