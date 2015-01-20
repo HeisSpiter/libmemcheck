@@ -172,7 +172,7 @@ void * gc::GarbageCollector::AllocateBlock(size_t Size, bool NonPageable, bool Z
   /* Try to allocate memory */
   MemoryBlock = mmap(0, AllocateSize, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
   /* If we have memory block */
-  if (MemoryBlock != 0)
+  if (MemoryBlock != MAP_FAILED)
   {
     /* Check if user wants zeroed memory */
     if (ZeroBlock)
@@ -197,13 +197,17 @@ void * gc::GarbageCollector::AllocateBlock(size_t Size, bool NonPageable, bool Z
         }
       }
     }
-  }
 
-  if (!MustSucceed)
+    if (!MustSucceed)
+    {
+      /* Now, increase total allocated size */
+      ulTotalAllocated += AllocateSize;
+      GCAssert(ulTotalAllocated <= ulMaxBytes);
+    }
+  }
+  else
   {
-    /* Now, increase total allocated size */
-    ulTotalAllocated += AllocateSize;
-    GCAssert(ulTotalAllocated <= ulMaxBytes);
+    MemoryBlock = 0;
   }
 
   return MemoryBlock;
